@@ -1,0 +1,2 @@
+class GimpException(Exception):
+    pass
