@@ -1,6 +1,15 @@
 # pimp
 Call gimp routines from python3 code.
 
+# Installation
+
+## Local
+
+Install using symlink to checked out code (for development):
+```
+pip3 install -e .
+```
+
 # Publishing
 
 Follow the guidelines for:
