@@ -8,4 +8,4 @@ def get_content(file: str) -> str:
 
 
 def relative_to(file: str, path: str):
-    return os.path.relpath(path, os.path.dirname(file))
+    return os.path.join(os.path.dirname(file), path)
