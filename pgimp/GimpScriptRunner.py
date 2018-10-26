@@ -3,8 +3,8 @@ import shutil
 import subprocess
 from typing import Dict, Tuple
 
-from pimp.GimpException import GimpException
-from pimp.util import file
+from pgimp.GimpException import GimpException
+from pgimp.util import file
 
 EXECUTABLE_GIMP = 'gimp'
 EXECUTABLE_XVFB = 'xvfb-run'
