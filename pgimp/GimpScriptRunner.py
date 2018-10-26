@@ -3,8 +3,8 @@ import shutil
 import subprocess
 from typing import Dict, Tuple
 
-from pimp.GimpException import GimpException
-from pimp.util import file
+from pgimp.GimpException import GimpException
+from pgimp.util import file
 
 EXECUTABLE_GIMP = 'gimp'
 EXECUTABLE_XVFB = 'xvfb-run'
@@ -82,8 +82,8 @@ class GimpScriptRunner:
         )
 
     def _send_to_gimp(self, code: str, timeout_in_seconds: float=None) -> Tuple[str, str]:
-        error_handler = file.get_content(file.relative_to(__file__, 'gimp/error_handler.py')) + "\n"
-        quit_gimp = "\npdb.gimp_quit(0)"
+        error_handler = file.get_content(file.relative_to(__file__, 'gimp/error_handler.py')) + '\n'
+        quit_gimp = '\npdb.gimp_quit(0)'
 
         code = error_handler + code + quit_gimp
 

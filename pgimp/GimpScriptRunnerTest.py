@@ -1,6 +1,6 @@
 import pytest
 
-from pimp.GimpScriptRunner import GimpScriptRunner, GimpScriptException
+from pgimp.GimpScriptRunner import GimpScriptRunner, GimpScriptException
 
 
 def test_execute_string():
