@@ -1,7 +1,8 @@
+import json
 import os
 import shutil
 import subprocess
-from typing import Dict, Tuple
+from typing import Dict, Union
 
 from pgimp.GimpException import GimpException
 from pgimp.util import file
@@ -16,6 +17,8 @@ FLAG_NO_FONTS = '-f'
 FLAG_NON_INTERACTIVE = '-b'
 FLAG_FROM_STDIN = '-'
 
+JsonType = Union[None, bool, int, float, str, list, dict]
+
 
 class GimpNotInstalledException(GimpException):
     pass
@@ -26,6 +29,10 @@ class GimpNotRunningException(GimpException):
 
 
 class GimpScriptException(GimpException):
+    pass
+
+
+class GimpScriptExecutionTimeoutException(GimpException):
     pass
 
 
@@ -44,18 +51,23 @@ class GimpScriptRunner:
         self._environment = environment or {}
         self._working_directory = working_directory
 
-    def execute_file(self, file: str, timeout_in_seconds: float=None) -> Tuple[str, str]:
+    def execute_file(self, file: str, *, parameters: dict=None, timeout_in_seconds: float=None) -> str:
         with open(file, 'r') as file_handle:
             content = file_handle.read()
-        return self.execute_string(content, timeout_in_seconds)
+        return self.execute(content, parameters, timeout_in_seconds)
 
-    def execute_string(self, string: str, timeout_in_seconds: float=None) -> Tuple[str, str]:
-        self._open_gimp()
+    def execute_and_parse_json(self, string: str, timeout_in_seconds: float=None) -> JsonType:
+        result = self.execute(string, timeout_in_seconds=timeout_in_seconds)
+        return self._parse(result)
+
+    def execute(self, string: str, parameters: dict=None, timeout_in_seconds: float=None) -> str:
+        self._open_gimp(parameters)
         return self._send_to_gimp(string, timeout_in_seconds)
 
-    def _open_gimp(self):
+    def _open_gimp(self, parameters: dict=None):
         if not is_gimp_present():
             raise GimpNotInstalledException('A working gimp installation with gimp on the PATH is necessary.')
+
         command = []
         if is_xvfb_present():
             command.append(shutil.which('xvfb-run'))
@@ -73,6 +85,9 @@ class GimpScriptRunner:
         gimp_environment.update(os.environ.copy())
         gimp_environment.update({k: v for k, v in self._environment.items() if self._environment[k] is not None})
 
+        parameters = parameters or {}
+        gimp_environment.update({k: v for k, v in parameters.items() if parameters[k] is not None})
+
         self._gimp_process = subprocess.Popen(
             command,
             stdin=subprocess.PIPE,
@@ -81,13 +96,17 @@ class GimpScriptRunner:
             env=gimp_environment,
         )
 
-    def _send_to_gimp(self, code: str, timeout_in_seconds: float=None) -> Tuple[str, str]:
-        error_handler = file.get_content(file.relative_to(__file__, 'gimp/error_handler.py')) + '\n'
+    def _send_to_gimp(self, code: str, timeout_in_seconds: float=None) -> str:
+        initializer = file.get_content(file.relative_to(__file__, 'gimp/initializer.py')) + '\n'
         quit_gimp = '\npdb.gimp_quit(0)'
 
-        code = error_handler + code + quit_gimp
+        code = initializer + code + quit_gimp
 
-        stdout, stderr = self._gimp_process.communicate(code.encode(), timeout=timeout_in_seconds)
+        try:
+            stdout, stderr = self._gimp_process.communicate(code.encode(), timeout=timeout_in_seconds)
+        except subprocess.TimeoutExpired as exception:
+            raise GimpScriptExecutionTimeoutException(str(exception) + '\nCode that was executed:\n' + code)
+
         stdout_content = stdout.decode()
         stderr_content = stderr.decode()
 
@@ -97,3 +116,6 @@ class GimpScriptRunner:
             raise GimpScriptException(error_string)
 
         return stdout_content
+
+    def _parse(self, input: str) -> JsonType:
+       return json.loads(input)

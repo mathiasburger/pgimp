@@ -1,5 +1,9 @@
 import sys
 import os
+import json
+import gimpfu
+import gimp
+import gimpenums
 
 
 def __exception_hook(exctype, value, traceback):
@@ -11,3 +15,11 @@ def __exception_hook(exctype, value, traceback):
 sys.excepthook = __exception_hook
 os.chdir(os.environ['__working_directory__'])
 sys.path.append(os.getcwd())
+
+
+def get_parameter(name):
+    return os.environ[name]
+
+
+def return_json(obj):
+    json.dump(obj, sys.stdout)
