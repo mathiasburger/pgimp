@@ -1,5 +1,17 @@
-# pimp
+# pgimp
+
 Call gimp routines from python3 code.
+
+## Create skeletons for gimp python autocompletion
+
+When writing scripts to be executed within gimp, it is useful to have IDE autocompletion. `GimpDocumentationGenerator` 
+can generate python skeletons for this task. The corresponding test `GimpDocumentationGeneratorTest` describes how 
+to write the skeleton.
+
+## Run a python script within gimp
+
+Running python code within gimp is performed by the `GimpScriptRunner`. Have a look at the corresponding test 
+`GimpScriptRunnerTest` to see how this works.
 
 # Installation
 

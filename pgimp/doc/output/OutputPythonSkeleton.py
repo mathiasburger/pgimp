@@ -3,8 +3,8 @@ import textwrap
 from collections import OrderedDict
 from typing import Tuple, MutableMapping, Union, List
 
-from pgimp.documentation.GimpDocumentationGenerator import gimpTypeMapping, KNOWN_GIMP_CLASSES, UNKNOWN_GIMP_CLASSES
-from pgimp.documentation.output.Output import Output
+from pgimp.doc.GimpDocumentationGenerator import gimpTypeMapping, KNOWN_GIMP_CLASSES, UNKNOWN_GIMP_CLASSES
+from pgimp.doc.output.Output import Output
 from pgimp.util import file
 
 

@@ -2,7 +2,7 @@ import textwrap
 from collections import OrderedDict
 
 from pgimp.GimpScriptRunner import GimpScriptRunner
-from pgimp.documentation.output.Output import Output
+from pgimp.doc.output.Output import Output
 
 gimpTypeMapping = {
     0: 'int',  # PDB-INT32 (0)
@@ -29,7 +29,7 @@ gimpTypeMapping = {
     21: 'Status',  # PDB-STATUS (21
 }
 """
-See also gimp-procedural-db-proc-arg documentation.
+See also gimp-procedural-db-proc-arg doc.
 """
 
 STANDARD_TYPES = list(range(0, 9+1))

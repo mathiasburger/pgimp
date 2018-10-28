@@ -1,7 +1,7 @@
 import os
 
-from pgimp.documentation.GimpDocumentationGenerator import GimpDocumentationGenerator
-from pgimp.documentation.output.OutputPythonSkeleton import OutputPythonSkeleton
+from pgimp.doc.GimpDocumentationGenerator import GimpDocumentationGenerator
+from pgimp.doc.output.OutputPythonSkeleton import OutputPythonSkeleton
 from pgimp.util import file
 
 
