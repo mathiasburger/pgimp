@@ -1,7 +1,7 @@
 import os
 import textwrap
 from collections import OrderedDict
-from typing import Tuple, MutableMapping, Union
+from typing import Tuple, MutableMapping, Union, List
 
 from pgimp.documentation.output.Output import Output
 from pgimp.util import file
@@ -18,15 +18,8 @@ class OutputPythonSkeleton(Output):
         self._current_file = None
 
     def start_module(self, name: str):
-        if not os.path.exists(self._output_dir):
-            os.makedirs(self._output_dir)
-        skeleton_file = os.path.join(self._output_dir, '{:s}.py'.format(name))
-        if os.path.exists(skeleton_file):
-            os.remove(skeleton_file)
-        file.touch(skeleton_file)
-
-        self._current_file = skeleton_file
-        file.append(self._current_file, 'from typing import List, Tuple\n')
+        self._add_file(name)
+        self._append('from typing import List, Tuple\n')
 
     def method(
         self,
@@ -73,5 +66,33 @@ class OutputPythonSkeleton(Output):
         result = '\n\ndef ' + signature + ':' + '\n' + textwrap.indent(documentation, '    ') + '\n' + \
                  textwrap.indent('raise NotImplementedError()', '    ') + '\n'
 
-        file.append(self._current_file, result)
+        self._append(result)
 
+    def start_class(self, name: str):
+        self._add_file(name)
+        self._append('class {:s}:'.format(name))
+
+    def class_properties(self, properties: List[str]):
+        for property in properties:
+            self._append(textwrap.indent('\n{:s} = None'.format(property), '    '))
+
+    def class_methods(self, methods: List[str]):
+        for method in methods:
+            self._append(textwrap.indent(
+                '\n\ndef {:s}(self, *args, **kwargs):\n    raise NotImplementedError()'.format(method),
+                '    ')
+            )
+        self._append('\n')
+
+    def _add_file(self, name: str):
+        if not os.path.exists(self._output_dir):
+            os.makedirs(self._output_dir)
+        skeleton_file = os.path.join(self._output_dir, '{:s}.py'.format(name))
+        if os.path.exists(skeleton_file):
+            os.remove(skeleton_file)
+        file.touch(skeleton_file)
+
+        self._current_file = skeleton_file
+
+    def _append(self, string: str):
+        file.append(self._current_file, string)

@@ -39,11 +39,30 @@ class GimpDocumentationGenerator:
         self._gsr: GimpScriptRunner = GimpScriptRunner()
 
     def __call__(self):
-        module = 'pdb'
-        self._output.start_module(module)
+        self._document_gimp_classes()
+        self._document_pdb_module()
+
+    def _document_gimp_classes(self):
+        # Color, Selection, ColorArray, Status are not classes in the gimp namespace
+        gimp_classes = [gimpTypeMapping[i] for i in range(10, 21 + 1) if i not in [10, 17, 18, 21]]
+        for gimp_class in gimp_classes:
+            self._output.start_class(gimp_class)
+            attrs = self._execute(
+                'attrs = filter(lambda s: not s.startswith("__"), dir(gimp.{0:s}))\n'.format(gimp_class) +
+                'props = filter(lambda a: type(eval("gimp.{:s}." + a)).__name__ == "getset_descriptor", attrs)\n'.format(gimp_class) +
+                'methods = filter(lambda a: type(eval("gimp.{:s}." + a)).__name__ == "method_descriptor", attrs)\n'.format(gimp_class) +
+                'return_json({"props": props, "methods": methods})'
+            )
+            props = attrs['props']
+            methods = attrs['methods']
+            self._output.class_properties(props)
+            self._output.class_methods(methods)
+
+    def _document_pdb_module(self):
+        self._output.start_module('pdb')
         methods = self._execute(
             'num_matches, procedure_names = pdb.gimp_procedural_db_query("", "", "", "", "", "", "")\n' +
-            'return_json(procedure_names)'
+            'return_json(filter(lambda s: not s.startswith("__"), procedure_names))'
         )
         methods = sorted(methods)
         for method in methods:
@@ -79,7 +98,7 @@ class GimpDocumentationGenerator:
                     ) + 'return_json([val_type, val_name, val_desc])'
                 )
                 return_values[val_name] = (gimpTypeMapping[val_type], val_desc or '')
-            
+
             self._output.method(method, description, parameters, return_values)
 
     def _execute(self, string: str):
