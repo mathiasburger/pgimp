@@ -29,3 +29,7 @@ class Output(ABC):
     @abstractmethod
     def class_methods(self, methods: List[str]):
         pass
+
+    @abstractmethod
+    def start_unknown_class(self, name: str):
+        pass

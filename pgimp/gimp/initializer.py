@@ -1,9 +1,7 @@
 import sys
 import os
 import json
-import gimpfu
 import gimp
-import gimpenums
 
 
 def __exception_hook(exctype, value, traceback):

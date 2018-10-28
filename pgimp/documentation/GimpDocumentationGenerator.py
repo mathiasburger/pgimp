@@ -1,3 +1,4 @@
+import textwrap
 from collections import OrderedDict
 
 from pgimp.GimpScriptRunner import GimpScriptRunner
@@ -31,6 +32,10 @@ gimpTypeMapping = {
 See also gimp-procedural-db-proc-arg documentation.
 """
 
+STANDARD_TYPES = list(range(0, 9+1))
+UNKNOWN_GIMP_CLASSES = [10, 17, 18, 21]
+KNOWN_GIMP_CLASSES = [i for i in gimpTypeMapping if i not in UNKNOWN_GIMP_CLASSES and i not in STANDARD_TYPES]
+
 
 class GimpDocumentationGenerator:
     def __init__(self, output: Output) -> None:
@@ -39,12 +44,12 @@ class GimpDocumentationGenerator:
         self._gsr: GimpScriptRunner = GimpScriptRunner()
 
     def __call__(self):
-        self._document_gimp_classes()
         self._document_pdb_module()
+        self._document_known_gimp_classes()
+        self._document_unknown_gimp_classes()
 
-    def _document_gimp_classes(self):
-        # Color, Selection, ColorArray, Status are not classes in the gimp namespace
-        gimp_classes = [gimpTypeMapping[i] for i in range(10, 21 + 1) if i not in [10, 17, 18, 21]]
+    def _document_known_gimp_classes(self):
+        gimp_classes = [gimpTypeMapping[i] for i in KNOWN_GIMP_CLASSES]
         for gimp_class in gimp_classes:
             self._output.start_class(gimp_class)
             attrs = self._execute(
@@ -58,19 +63,45 @@ class GimpDocumentationGenerator:
             self._output.class_properties(props)
             self._output.class_methods(methods)
 
+    def _document_unknown_gimp_classes(self):
+        gimp_classes = [gimpTypeMapping[i] for i in UNKNOWN_GIMP_CLASSES]
+        for gimp_class in gimp_classes:
+            self._output.start_unknown_class(gimp_class)
+
     def _document_pdb_module(self):
         self._output.start_module('pdb')
-        methods = self._execute(
-            'num_matches, procedure_names = pdb.gimp_procedural_db_query("", "", "", "", "", "", "")\n' +
-            'return_json(filter(lambda s: not s.startswith("__"), procedure_names))'
-        )
-        methods = sorted(methods)
-        for method in methods:
-            blurb, help, num_args, num_values = self._execute(
-                'blurb, help, author, copyright, date, proc_type, num_args, num_values = \\\n' +
-                '    pdb.gimp_procedural_db_proc_info("{:s}")\n'.format(method) +
-                'return_json([blurb, help, num_args, num_values])'
-            )
+        pdb_dump = textwrap.dedent(
+            """        
+            from collections import OrderedDict
+                
+            result = OrderedDict()
+            
+            num_matches, procedure_names = pdb.gimp_procedural_db_query("", "", "", "", "", "", "")
+            methods = sorted(procedure_names)
+            for method in methods:
+                blurb, help, author, copyright, date, proc_type, num_args, num_values = pdb.gimp_procedural_db_proc_info(method)
+                result[method] = OrderedDict()
+                result[method]['blurb'] = blurb
+                result[method]['help'] = help
+                result[method]['args'] = OrderedDict()
+                result[method]['vals'] = OrderedDict()
+                for arg_num in range(0, num_args):
+                    arg_type, arg_name, arg_desc = pdb.gimp_procedural_db_proc_arg(method, arg_num)
+                    result[method]['args'][arg_name] = OrderedDict()
+                    result[method]['args'][arg_name]['type'] = arg_type
+                    result[method]['args'][arg_name]['desc'] = arg_desc
+                for val_num in range(0, num_values):
+                    val_type, val_name, val_desc = pdb.gimp_procedural_db_proc_val(method, val_num)
+                    result[method]['vals'][val_name] = OrderedDict()
+                    result[method]['vals'][val_name]['type'] = val_type
+                    result[method]['vals'][val_name]['desc'] = val_desc
+                 
+            return_json(result)
+            """)
+        methods = self._execute(pdb_dump, 10)
+        for method in methods.keys():
+            blurb = methods[method]['blurb']
+            help = methods[method]['help']
 
             description = ''
             if blurb:
@@ -81,25 +112,18 @@ class GimpDocumentationGenerator:
                 description += help
 
             parameters = OrderedDict()
-            for arg_num in range(0, num_args):
-                arg_type, arg_name, arg_desc = self._execute(
-                    'arg_type, arg_name, arg_desc = pdb.gimp_procedural_db_proc_arg("{:s}", {:d})\n'.format(
-                        method,
-                        arg_num
-                    ) + 'return_json([arg_type, arg_name, arg_desc])'
-                )
+            for arg_name in methods[method]['args'].keys():
+                arg_type = methods[method]['args'][arg_name]['type']
+                arg_desc = methods[method]['args'][arg_name]['desc']
                 parameters[arg_name] = (gimpTypeMapping[arg_type], arg_desc or '')
 
             return_values = OrderedDict()
-            for val_num in range(0, num_values):
-                val_type, val_name, val_desc = self._execute(
-                    'val_type, val_name, val_desc = pdb.gimp_procedural_db_proc_val("{:s}", {:d})\n'.format(
-                        method, val_num
-                    ) + 'return_json([val_type, val_name, val_desc])'
-                )
+            for val_name in methods[method]['vals'].keys():
+                val_type = methods[method]['vals'][val_name]['type']
+                val_desc = methods[method]['vals'][val_name]['desc']
                 return_values[val_name] = (gimpTypeMapping[val_type], val_desc or '')
 
             self._output.method(method, description, parameters, return_values)
 
-    def _execute(self, string: str):
-        return self._gsr.execute_and_parse_json(string, timeout_in_seconds=3)
+    def _execute(self, string: str, timeout_in_seconds: int=3):
+        return self._gsr.execute_and_parse_json(string, timeout_in_seconds=timeout_in_seconds)
