@@ -6,3 +6,5 @@ __pycache__/
 *$py.class
 .pytest_cache/
 *.egg-info
+/gimp/
+/doc/
