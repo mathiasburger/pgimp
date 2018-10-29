@@ -28,3 +28,4 @@ def test_generate_python_skeletons():
     assert_file_exists('gimp/Status.py')
     assert_file_exists('gimp/Vectors.py')
     assert_file_exists('gimpenums/__init__.py')
+    assert_file_exists('gimpfu/__init__.py')

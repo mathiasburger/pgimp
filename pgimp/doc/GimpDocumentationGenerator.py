@@ -48,6 +48,7 @@ class GimpDocumentationGenerator:
         self._document_known_gimp_classes()
         self._document_unknown_gimp_classes()
         self._document_gimp_enums()
+        self._document_gimpfu_constants()
 
     def _document_known_gimp_classes(self):
         gimp_classes = [gimpTypeMapping[i] for i in KNOWN_GIMP_CLASSES]
@@ -135,12 +136,26 @@ class GimpDocumentationGenerator:
         enum_dump = textwrap.dedent(
             """        
             import gimpenums
-            from collections import OrderedDict
 
             result = filter(lambda s: not s.startswith('__'), dir(gimpenums))
-            result = zip(result, filter(lambda v: type(v).__name__ != 'instance', map(lambda s: eval('gimpenums.' + s), result)))
+            result = zip(result, map(lambda s: eval('gimpenums.' + s), result))
+            result = filter(lambda v: type(v[1]).__name__ != 'instance', result)
 
             return_json(result)
             """)
         enums = self._execute(enum_dump)
         self._output.gimpenums(enums)
+
+    def _document_gimpfu_constants(self):
+        const_dump = textwrap.dedent(
+            """        
+            import gimpfu
+
+            result = filter(lambda s: not s.startswith('__') and s.isupper(), dir(gimpfu))
+            result = zip(result, map(lambda s: eval('gimpfu.' + s), result))
+            result = filter(lambda v: type(v[1]).__name__ not in ['instance', 'function'] , result)
+
+            return_json(result)
+            """)
+        constants = self._execute(const_dump)
+        self._output.gimpfu_constants(constants)

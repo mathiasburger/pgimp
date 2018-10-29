@@ -104,6 +104,18 @@ class OutputPythonSkeleton(Output):
 
         self._append(output)
 
+    def gimpfu_constants(self, constants: Tuple[str, Any]):
+        output_dir_bak = self._output_dir
+        self._output_dir = os.path.join(os.path.dirname(self._output_dir), 'gimpfu')
+        self._add_file('__init__')
+        self._output_dir = output_dir_bak
+
+        output = ''
+        for constant_name, constant_value in constants:
+            output += '{:s} = {:s}\n'.format(constant_name, repr(constant_value))
+
+        self._append(output)
+
     def _add_file(self, name: str):
         if not os.path.exists(self._output_dir):
             os.makedirs(self._output_dir)

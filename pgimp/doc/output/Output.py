@@ -37,3 +37,7 @@ class Output(ABC):
     @abstractmethod
     def gimpenums(self, enum_values: Tuple[str, Any]):
         pass
+
+    @abstractmethod
+    def gimpfu_constants(self, constants: Tuple[str, Any]):
+        pass
