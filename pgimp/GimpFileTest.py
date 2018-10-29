@@ -1,4 +1,5 @@
 import os
+import tempfile
 
 import numpy as np
 
@@ -42,15 +43,25 @@ def test_create():
     assert np.all(layer_bg == actual)
 
 
-# def test_numpy_to_layer():
-#     tmp_file = tempfile.mktemp(suffix='.xcf')
-#     layer = np.array([
-#         [[255, 255, 255], [0, 0, 0], [255, 255, 255]],
-#         [[255, 255, 255], [255, 255, 255], [255, 255, 255]],
-#     ], dtype=np.uint8)
-#
-#     gimp_file = GimpFile(tmp_file)
-#     gimp_file.create(3, 2, RGB)
-#     gimp_file.numpy_to_layer('Background', layer)
-#
-#     os.remove(tmp_file)
+def test_numpy_to_layer():
+    tmp_file = tempfile.mktemp(suffix='.xcf')
+    layer_bg = np.array([
+        [[255, 255, 255], [0, 0, 0], [255, 255, 255]],
+        [[255, 255, 255], [255, 255, 255], [255, 255, 255]],
+    ], dtype=np.uint8)
+    layer_fg = np.array([
+        [[255, 255, 255], [255, 255, 255], [255, 255, 255]],
+        [[255, 255, 255], [0, 0, 0], [255, 255, 255]],
+    ], dtype=np.uint8)
+
+    gimp_file = GimpFile(tmp_file)
+    gimp_file.create('Background', layer_bg)
+    gimp_file.numpy_to_layer('Foreground', layer_fg, opacity=55., visible=False)
+
+    actual_bg = gimp_file.layer_to_numpy('Background')
+    actual_fg = gimp_file.layer_to_numpy('Foreground')
+
+    os.remove(tmp_file)
+
+    assert np.all(layer_bg == actual_bg)
+    assert np.all(layer_fg == actual_fg)

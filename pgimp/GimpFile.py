@@ -1,4 +1,5 @@
 import io
+import os
 import tempfile
 import textwrap
 from enum import Enum
@@ -7,7 +8,6 @@ import numpy as np
 
 from pgimp.GimpException import GimpException
 from pgimp.GimpScriptRunner import GimpScriptRunner
-from pgimp.util import file
 
 
 class GimpFileType(Enum):
@@ -30,27 +30,15 @@ class GimpFile:
         super().__init__()
         self._file = file
         self._gsr = GimpScriptRunner()
+        self._layer_conversion_timeout_in_seconds = 10
 
     def create(self, layer_name: str, layer_content: np.ndarray):
-        if len(layer_content.shape) == 2:
-            height, width = layer_content.shape
-            depth = 1
-        elif len(layer_content.shape) == 3 and layer_content.shape[2] in [1, 3]:
-            height, width, depth = layer_content.shape
-        else:
-            raise DataFormatException('Unrecognized input data shape: ' + repr(layer_content.shape))
-
-        if depth == 1:
-            type = GimpFileType.GRAY
-        elif depth == 3:
-            type = GimpFileType.RGB
-        else:
-            raise DataFormatException('Wrong image depth {:d}'.format(depth))
+        height, width, depth, image_type, layer_type = self._numpy_array_info(layer_content)
 
         tmpfile = tempfile.mktemp(suffix='.npy')
         np.save(tmpfile, layer_content)
 
-        self._gsr.execute(textwrap.dedent(
+        code = textwrap.dedent(
             """
             import gimp
             import gimpenums
@@ -66,7 +54,11 @@ class GimpFile:
             gimp.pdb.gimp_image_add_layer(image, layer, 0)
             gimp.pdb.gimp_file_save(image, layer, '{3:s}', '{3:s}')
             """
-        ).format(width, height, type.value, self._file, image_type_to_layer_type[type], layer_name, tmpfile), timeout_in_seconds=2)
+        ).format(width, height, image_type.value, self._file, layer_type, layer_name, tmpfile)
+
+        self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
+
+        os.remove(tmpfile)
 
     def layer_to_numpy(self, layer_name: str) -> np.ndarray:
         bytes = self._gsr.execute_binary(textwrap.dedent(
@@ -85,35 +77,56 @@ class GimpFile:
                         
             np.save(sys.stdout, np_buffer)
             """
-        ).format(self._file, layer_name), timeout_in_seconds=3)
+        ).format(self._file, layer_name), timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
 
-        layer = np.load(io.BytesIO(bytes))
-        assert np.all(layer[0, 1] == 0)
-        assert np.all(layer[1, 0] == 255)
-        return layer
+        return np.load(io.BytesIO(bytes))
 
-    def numpy_to_layer(self):
-        # numpy to layer
-        out2 = self._gsr.execute(textwrap.dedent(
+    def numpy_to_layer(self, layer_name: str, layer_content: np.ndarray, opacity: float=100.0, visible: bool=True):
+        height, width, depth, image_type, layer_type = self._numpy_array_info(layer_content)
+
+        tmpfile = tempfile.mktemp(suffix='.npy')
+        np.save(tmpfile, layer_content)
+
+        code = textwrap.dedent(
             """
+            import gimp
+            import gimpenums
             import numpy as np
 
-            name = '{1:s}'
-
-            array = np.load('/tmp/test.npz')['Background']
+            image = gimp.pdb.gimp_file_load('{2:s}', '{2:s}')
+            layer = gimp.pdb.gimp_layer_new(image, {0:d}, {1:d}, {3:d}, '{4:s}', 100, gimpenums.NORMAL_MODE)
+            layer.visible = {6:s}
+            layer.opacity = {7:s}
+            array = np.load('{5:s}')
             bytes = np.uint8(array).tobytes()
-            image = gimp.Image(3, 2, RGB)
-            layer = gimp.Layer(image, name, image.width, image.height, RGB_IMAGE, 100, NORMAL_MODE)
             region = layer.get_pixel_rgn(0, 0, layer.width, layer.height, True)
             region[: ,:] = bytes
-            image.add_layer(layer, 0)
 
-            gimp.pdb.gimp_file_save(image, layer, '/tmp/test.xcf', '/tmp/test.xcf')
+            gimp.pdb.gimp_image_add_layer(image, layer, 0)
+            gimp.pdb.gimp_file_save(image, layer, '{2:s}', '{2:s}')
             """
-        ).format(self._file, layer), timeout_in_seconds=3)
-        assert out2 != None
+        ).format(width, height, self._file, layer_type, layer_name, tmpfile, str(visible), str(opacity).format())
 
+        self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
 
-if __name__ == '__main__':
-    gf = GimpFile(file.relative_to(__file__, 'test-resources/rgb.xcf'))
-    gf.layer_to_numpy('Background')
+        os.remove(tmpfile)
+
+    def _numpy_array_info(self, content: np.ndarray):
+        if len(content.shape) == 2:
+            height, width = content.shape
+            depth = 1
+        elif len(content.shape) == 3 and content.shape[2] in [1, 3]:
+            height, width, depth = content.shape
+        else:
+            raise DataFormatException('Unrecognized input data shape: ' + repr(content.shape))
+
+        if depth == 1:
+            image_type = GimpFileType.GRAY
+        elif depth == 3:
+            image_type = GimpFileType.RGB
+        else:
+            raise DataFormatException('Wrong image depth {:d}'.format(depth))
+
+        layer_type = image_type_to_layer_type[image_type]
+
+        return height, width, depth, image_type, layer_type
