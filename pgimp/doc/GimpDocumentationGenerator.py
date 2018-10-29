@@ -47,6 +47,8 @@ class GimpDocumentationGenerator:
         self._document_pdb_module()
         self._document_known_gimp_classes()
         self._document_unknown_gimp_classes()
+        self._document_gimp_enums()
+        self._document_gimpfu_constants()
 
     def _document_known_gimp_classes(self):
         gimp_classes = [gimpTypeMapping[i] for i in KNOWN_GIMP_CLASSES]
@@ -87,6 +89,8 @@ class GimpDocumentationGenerator:
                 result[method]['vals'] = OrderedDict()
                 for arg_num in range(0, num_args):
                     arg_type, arg_name, arg_desc = pdb.gimp_procedural_db_proc_arg(method, arg_num)
+                    if arg_name == 'run-mode':
+                        continue
                     result[method]['args'][arg_name] = OrderedDict()
                     result[method]['args'][arg_name]['type'] = arg_type
                     result[method]['args'][arg_name]['desc'] = arg_desc
@@ -127,3 +131,31 @@ class GimpDocumentationGenerator:
 
     def _execute(self, string: str, timeout_in_seconds: int=3):
         return self._gsr.execute_and_parse_json(string, timeout_in_seconds=timeout_in_seconds)
+
+    def _document_gimp_enums(self):
+        enum_dump = textwrap.dedent(
+            """        
+            import gimpenums
+
+            result = filter(lambda s: not s.startswith('__'), dir(gimpenums))
+            result = zip(result, map(lambda s: eval('gimpenums.' + s), result))
+            result = filter(lambda v: type(v[1]).__name__ != 'instance', result)
+
+            return_json(result)
+            """)
+        enums = self._execute(enum_dump)
+        self._output.gimpenums(enums)
+
+    def _document_gimpfu_constants(self):
+        const_dump = textwrap.dedent(
+            """        
+            import gimpfu
+
+            result = filter(lambda s: not s.startswith('__') and s.isupper(), dir(gimpfu))
+            result = zip(result, map(lambda s: eval('gimpfu.' + s), result))
+            result = filter(lambda v: type(v[1]).__name__ not in ['instance', 'function'] , result)
+
+            return_json(result)
+            """)
+        constants = self._execute(const_dump)
+        self._output.gimpfu_constants(constants)

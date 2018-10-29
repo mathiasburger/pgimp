@@ -14,9 +14,24 @@ def test_execute_file():
     file.append(tmpfile, 'print(get_parameter("parameter"))')
     out = gsr.execute_file(tmpfile, parameters={'parameter': 'value'}, timeout_in_seconds=1)
 
+    os.remove(tmpfile)
+
     assert 'value\n' == out
 
+
+def test_execute_file_with_runtime_exception():
+    tmpfile = mktemp(suffix='.py')
+    file.append(tmpfile, 'print(get_parameter("parameter"))\nprint(1/0)')
+
+    with pytest.raises(GimpScriptException) as exception:
+        gsr.execute_file(tmpfile, parameters={'parameter': 'value'}, timeout_in_seconds=1)
+
+    original_exception = exception._excinfo[1]
+    exception_lines = str(original_exception).split('\n')
+
     os.remove(tmpfile)
+
+    assert 'File "{:s}", line 2'.format(tmpfile) in exception_lines[-3]
 
 
 def test_execute_string():

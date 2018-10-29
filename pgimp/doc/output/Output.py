@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from typing import Dict, Tuple, MutableMapping, Union, List
+from typing import Dict, Tuple, MutableMapping, Union, List, Any
 
 
 class Output(ABC):
@@ -32,4 +32,12 @@ class Output(ABC):
 
     @abstractmethod
     def start_unknown_class(self, name: str):
+        pass
+
+    @abstractmethod
+    def gimpenums(self, enum_values: Tuple[str, Any]):
+        pass
+
+    @abstractmethod
+    def gimpfu_constants(self, constants: Tuple[str, Any]):
         pass
