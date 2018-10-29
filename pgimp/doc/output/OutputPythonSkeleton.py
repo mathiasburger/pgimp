@@ -1,7 +1,7 @@
 import os
 import textwrap
 from collections import OrderedDict
-from typing import Tuple, MutableMapping, Union, List
+from typing import Tuple, MutableMapping, Union, List, Any
 
 from pgimp.doc.GimpDocumentationGenerator import gimpTypeMapping, KNOWN_GIMP_CLASSES, UNKNOWN_GIMP_CLASSES
 from pgimp.doc.output.Output import Output
@@ -91,6 +91,18 @@ class OutputPythonSkeleton(Output):
     def start_unknown_class(self, name: str):
         self._add_file(name)
         self._append('class {:s}:\n    pass\n'.format(name))
+
+    def gimpenums(self, constants: Tuple[str, Any]):
+        output_dir_bak = self._output_dir
+        self._output_dir = os.path.join(os.path.dirname(self._output_dir), 'gimpenums')
+        self._add_file('__init__')
+        self._output_dir = output_dir_bak
+
+        output = ''
+        for constant_name, constant_value in constants:
+            output += '{:s} = {:s}\n'.format(constant_name, repr(constant_value))
+
+        self._append(output)
 
     def _add_file(self, name: str):
         if not os.path.exists(self._output_dir):
