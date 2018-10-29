@@ -65,6 +65,10 @@ class GimpScriptRunner:
         result = self.execute(string, timeout_in_seconds=timeout_in_seconds)
         return self._parse(result)
 
+    def execute_binary(self, string: str, parameters: dict=None, timeout_in_seconds: float=None) -> bytes:
+        self._open_gimp(parameters)
+        return self._send_to_gimp(string, timeout_in_seconds, binary=True)
+
     def execute(self, string: str, parameters: dict=None, timeout_in_seconds: float=None) -> str:
         self._open_gimp(parameters)
         return self._send_to_gimp(string, timeout_in_seconds)
@@ -101,7 +105,7 @@ class GimpScriptRunner:
             env=gimp_environment,
         )
 
-    def _send_to_gimp(self, code: str, timeout_in_seconds: float=None) -> str:
+    def _send_to_gimp(self, code: str, timeout_in_seconds: float=None, binary=False) -> Union[str, bytes]:
         initializer = file.get_content(file.relative_to(__file__, 'gimp/initializer.py')) + '\n'
         quit_gimp = '\npdb.gimp_quit(0)'
 
@@ -112,7 +116,11 @@ class GimpScriptRunner:
         except subprocess.TimeoutExpired as exception:
             raise GimpScriptExecutionTimeoutException(str(exception) + '\nCode that was executed:\n' + code)
 
-        stdout_content = stdout.decode()
+        if binary:
+            stdout_content = stdout
+        else:
+            stdout_content = stdout.decode()
+
         stderr_content = stderr.decode()
 
         error_lines = stderr_content.strip().split('\n')

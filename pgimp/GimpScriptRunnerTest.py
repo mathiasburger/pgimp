@@ -14,9 +14,9 @@ def test_execute_file():
     file.append(tmpfile, 'print(get_parameter("parameter"))')
     out = gsr.execute_file(tmpfile, parameters={'parameter': 'value'}, timeout_in_seconds=1)
 
-    assert 'value\n' == out
-
     os.remove(tmpfile)
+
+    assert 'value\n' == out
 
 
 def test_execute_file_with_runtime_exception():
