@@ -50,11 +50,16 @@ class GimpScriptRunner:
         self._gimp_process: subprocess.Popen = None
         self._environment = environment or {}
         self._working_directory = working_directory
+        self._file_to_execute = None
 
     def execute_file(self, file: str, *, parameters: dict=None, timeout_in_seconds: float=None) -> str:
-        with open(file, 'r') as file_handle:
-            content = file_handle.read()
-        return self.execute(content, parameters, timeout_in_seconds)
+        self._file_to_execute = file
+        try:
+            result = self.execute('exec(open(get_parameter("__script_file__")).read(), globals())',
+                                  {**parameters, '__script_file__': file}, timeout_in_seconds)
+            return result
+        finally:
+            self._file_to_execute = None
 
     def execute_and_parse_json(self, string: str, timeout_in_seconds: float=None) -> JsonType:
         result = self.execute(string, timeout_in_seconds=timeout_in_seconds)
@@ -112,7 +117,9 @@ class GimpScriptRunner:
 
         error_lines = stderr_content.strip().split('\n')
         if error_lines[-1].startswith('__GIMP_SCRIPT_ERROR__'):
-            error_string = stderr_content.rsplit('\n', 1)[0] + '\n'
+            error_string: str = stderr_content.rsplit('\n', 1)[0] + '\n'
+            if self._file_to_execute:
+                error_string = error_string.replace('File "<string>"', 'File "{:s}"'.format(self._file_to_execute), 1)
             raise GimpScriptException(error_string)
 
         return stdout_content
