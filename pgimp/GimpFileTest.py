@@ -91,6 +91,22 @@ def test_add_layer_from():
     os.remove(tmp_file)
 
 
+def test_merge_layer_from():
+    tmp_file = tempfile.mktemp(suffix='.xcf')
+    layer_bg = np.array([
+        [[255, 255, 255], [0, 0, 0], [255, 255, 255]],
+        [[255, 255, 255], [255, 255, 255], [255, 255, 255]],
+    ], dtype=np.uint8)
+
+    gimp_file = GimpFile(tmp_file)
+    gimp_file.create('Yellow', layer_bg)
+    gimp_file.merge_layer_from(black_and_yellow_file, 'Yellow')
+
+    assert np.all([240, 255, 0] == gimp_file.layer_to_numpy('Yellow'))
+
+    os.remove(tmp_file)
+
+
 def test_layers():
     layers = rgb_file.layers()
 

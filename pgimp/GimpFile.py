@@ -84,7 +84,7 @@ class GimpFile:
 
         return np.load(io.BytesIO(bytes))
 
-    def numpy_to_layer(self, layer_name: str, layer_content: np.ndarray, opacity: float=100.0, visible: bool=True):
+    def numpy_to_layer(self, layer_name: str, layer_content: np.ndarray, opacity: float=100.0, visible: bool=True, position: int=0):
         height, width, depth, image_type, layer_type = self._numpy_array_info(layer_content)
 
         tmpfile = tempfile.mktemp(suffix='.npy')
@@ -105,10 +105,10 @@ class GimpFile:
             region = layer.get_pixel_rgn(0, 0, layer.width, layer.height, True)
             region[: ,:] = bytes
 
-            gimp.pdb.gimp_image_add_layer(image, layer, 0)
+            gimp.pdb.gimp_image_add_layer(image, layer, {8:d})
             gimp.pdb.gimp_xcf_save(0, image, None, '{2:s}', '{2:s}')
             """
-        ).format(width, height, self._file, layer_type, layer_name, tmpfile, str(visible), str(opacity).format())
+        ).format(width, height, self._file, layer_type, layer_name, tmpfile, str(visible), str(opacity), position)
 
         self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
 
@@ -151,6 +151,25 @@ class GimpFile:
             gimp.pdb.gimp_xcf_save(0, image_dst, None, '{0:s}', '{0:s}')
             """
         ).format(self._file, other_file._file, new_name or name, name, new_type.value, new_position)
+
+        self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
+
+    def merge_layer_from(self, other_file: 'GimpFile', name: str):
+        code = textwrap.dedent(
+            """
+            import gimp
+            import gimpenums
+
+            image_dst = gimp.pdb.gimp_file_load('{0:s}', '{0:s}')
+            image_src = gimp.pdb.gimp_file_load('{1:s}', '{1:s}')
+            layer_src = gimp.pdb.gimp_image_get_layer_by_name(image_src, '{2:s}')
+            layer_dst = gimp.pdb.gimp_image_get_layer_by_name(image_dst, '{2:s}')
+            gimp.pdb.gimp_edit_copy(layer_src)
+            layer_floating = gimp.pdb.gimp_edit_paste(layer_dst, True)
+            gimp.pdb.gimp_floating_sel_anchor(layer_floating)
+            gimp.pdb.gimp_xcf_save(0, image_dst, None, '{0:s}', '{0:s}')
+            """
+        ).format(self._file, other_file._file, name)
 
         self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
 
