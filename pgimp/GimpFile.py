@@ -3,7 +3,7 @@ import os
 import tempfile
 import textwrap
 from enum import Enum
-from typing import List
+from typing import List, Union
 
 import numpy as np
 
@@ -15,6 +15,14 @@ from pgimp.layers.Layer import Layer
 class GimpFileType(Enum):
     RGB = 0
     GRAY = 1
+
+
+class LayerType(Enum):
+    INDEXED = 4
+
+
+class ColorMap(Enum):
+    JET = 'COLORMAP_JET'
 
 
 image_type_to_layer_type = {
@@ -64,6 +72,47 @@ class GimpFile:
 
         os.remove(tmpfile)
 
+    def create_indexed(self, layer_name: str, layer_content: np.ndarray, colormap: Union[np.ndarray, ColorMap]):
+        if isinstance(colormap, np.ndarray):
+            if not len(layer_content.shape) == 2 and not (len(layer_content.shape) == 3 and layer_content.shape[2] == 1):
+                raise DataFormatException('Indexed images can only contain one channel')
+            colormap = 'np.frombuffer({0}, dtype=np.uint8).reshape((256, 3))'.format(colormap.tobytes())
+        if isinstance(colormap, ColorMap):
+            colormap = colormap.value
+
+        tmpfile = tempfile.mktemp(suffix='.npy')
+        np.save(tmpfile, layer_content)
+
+        code = textwrap.dedent(
+            """
+            import gimp
+            import numpy as np
+            import gimpenums
+            from pgimp.gimp.file import open_xcf, save_xcf
+            from pgimp.gimp.colormap import *
+        
+            cmap = {0:s}
+            image = gimp.pdb.gimp_image_new({1:d}, {2:d}, gimpenums.GRAY)
+            palette_name = gimp.pdb.gimp_palette_new('colormap')
+            for i in range(0, cmap.shape[0]):
+                gimp.pdb.gimp_palette_add_entry(palette_name, str(i), (int(cmap[i][0]), int(cmap[i][1]), int(cmap[i][2])))
+            gimp.pdb.gimp_convert_indexed(image, gimpenums.NO_DITHER, gimpenums.CUSTOM_PALETTE, 256, False, False, palette_name)
+            
+            layer = gimp.pdb.gimp_layer_new(image, image.width, image.height, gimpenums.INDEXED_IMAGE, '{4:s}', 100, gimpenums.NORMAL_MODE)
+            array = np.load('{5:s}')
+            bytes = np.uint8(array).tobytes()
+            region = layer.get_pixel_rgn(0, 0, layer.width, layer.height, True)
+            region[: ,:] = bytes
+            gimp.pdb.gimp_image_add_layer(image, layer, 0)
+        
+            save_xcf(image, '{3:s}')
+            """
+        ).format(colormap, layer_content.shape[1], layer_content.shape[0], self._file, layer_name, tmpfile)
+
+        self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
+
+        os.remove(tmpfile)
+
     def layer_to_numpy(self, layer_name: str) -> np.ndarray:
         bytes = self._gsr.execute_binary(textwrap.dedent(
             """
@@ -71,7 +120,7 @@ class GimpFile:
             import numpy as np
             import sys
             from pgimp.gimp.file import open_xcf
-            
+
             image = open_xcf('{0:s}')
             layer_name = '{1:s}'
             layer = gimp.pdb.gimp_image_get_layer_by_name(image, layer_name)
@@ -79,15 +128,17 @@ class GimpFile:
             buffer = region[:, :]
             bpp = region.bpp
             np_buffer = np.frombuffer(buffer, dtype=np.uint8).reshape((layer.height, layer.width, bpp))
-                        
+
             np.save(sys.stdout, np_buffer)
             """
         ).format(self._file, layer_name), timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
 
         return np.load(io.BytesIO(bytes))
 
-    def numpy_to_layer(self, layer_name: str, layer_content: np.ndarray, opacity: float=100.0, visible: bool=True, position: int=0):
+    def numpy_to_layer(self, layer_name: str, layer_content: np.ndarray, opacity: float=100.0, visible: bool=True, position: int=0, type: LayerType=None):
         height, width, depth, image_type, layer_type = self._numpy_array_info(layer_content)
+        if type is not None:
+            layer_type = type.value
 
         tmpfile = tempfile.mktemp(suffix='.npy')
         np.save(tmpfile, layer_content)

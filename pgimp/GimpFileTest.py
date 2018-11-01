@@ -1,10 +1,12 @@
 import os
 import tempfile
+import textwrap
 
 import numpy as np
 from pytest import approx
 
-from pgimp.GimpFile import GimpFile
+from pgimp.GimpFile import GimpFile, LayerType, ColorMap
+from pgimp.GimpScriptRunner import GimpScriptRunner
 from pgimp.util import file
 
 
@@ -102,9 +104,11 @@ def test_merge_layer_from():
     gimp_file.create('Yellow', layer_bg)
     gimp_file.merge_layer_from(black_and_yellow_file, 'Yellow')
 
-    assert np.all([240, 255, 0] == gimp_file.layer_to_numpy('Yellow'))
+    new_layer_contents = gimp_file.layer_to_numpy('Yellow')
 
     os.remove(tmp_file)
+
+    assert np.all([240, 255, 0] == new_layer_contents)
 
 
 def test_layers():
@@ -114,3 +118,45 @@ def test_layers():
     assert [0, 1, 2, 3] == list(map(lambda x: x.position, layers))
     assert [False, False, False, True] == list(map(lambda x: x.visible, layers))
     assert [23.92156862745098, 40.3921568627451, 52.54901960784314, 100.0] == list(map(lambda x: approx(x.opacity), layers))
+
+
+def test_convert_to_indexed_using_predefined_colormap():
+    tmp_file = tempfile.mktemp(suffix='.xcf')
+    values = np.array([[i for i in range(0, 256)]], dtype=np.uint8)
+    assert (1, 256) == values.shape
+
+    gimp_file = GimpFile(tmp_file)
+    gimp_file.create_indexed('Background', values, ColorMap.JET)
+    gimp_file.numpy_to_layer('Values', values, type=LayerType.INDEXED)
+
+    layer_bg = gimp_file.layer_to_numpy('Background')
+    layer_values = gimp_file.layer_to_numpy('Values')
+
+    os.remove(tmp_file)
+
+    assert (1, 256, 1) == layer_bg.shape
+    assert np.all(values == layer_bg[:, :, 0])
+    assert (1, 256, 1) == layer_values.shape
+    assert np.all(values == layer_values[:, :, 0])
+
+
+def test_convert_to_indexed_using_custom_colormap():
+    tmp_file = tempfile.mktemp(suffix='.xcf')
+    values = np.array([[i for i in range(0, 256)]], dtype=np.uint8)
+    assert (1, 256) == values.shape
+    colormap = np.array([[255, 0, 0], [0, 255, 0], [0, 0, 255], *[[i, i, i] for i in range(3, 256)]], dtype=np.uint8)
+    assert (256, 3) == colormap.shape
+
+    gimp_file = GimpFile(tmp_file)
+    gimp_file.create_indexed('Background', values, colormap=colormap)
+    gimp_file.numpy_to_layer('Values', values, type=LayerType.INDEXED)
+
+    layer_bg = gimp_file.layer_to_numpy('Background')
+    layer_values = gimp_file.layer_to_numpy('Values')
+
+    os.remove(tmp_file)
+
+    assert (1, 256, 1) == layer_bg.shape
+    assert np.all(values == layer_bg[:, :, 0])
+    assert (1, 256, 1) == layer_values.shape
+    assert np.all(values == layer_values[:, :, 0])
