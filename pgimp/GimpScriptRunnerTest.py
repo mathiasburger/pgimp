@@ -61,3 +61,10 @@ def test_execute_and_parse_json():
     result = gsr.execute_and_parse_json('return_json(["a", "b", "c"])', timeout_in_seconds=1)
 
     assert ["a", "b", "c"] == result
+
+
+def test_import_from_pgimp_library():
+    gimp_file = file.relative_to(__file__, 'test-resources/rgb.xcf')
+    out = gsr.execute('from pgimp.gimp.file import *\nimage = open_xcf(\'{:s}\')\nprint(image.layers[0].name)'.format(gimp_file), timeout_in_seconds=1)
+
+    assert 'Blue\n' == out

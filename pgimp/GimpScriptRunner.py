@@ -107,9 +107,10 @@ class GimpScriptRunner:
 
     def _send_to_gimp(self, code: str, timeout_in_seconds: float=None, binary=False) -> Union[str, bytes]:
         initializer = file.get_content(file.relative_to(__file__, 'gimp/initializer.py')) + '\n'
+        extend_path = "sys.path.append('{:s}')\n".format(os.path.dirname(os.path.dirname(__file__)))
         quit_gimp = '\npdb.gimp_quit(0)'
 
-        code = initializer + code + quit_gimp
+        code = initializer + extend_path + code + quit_gimp
 
         try:
             stdout, stderr = self._gimp_process.communicate(code.encode(), timeout=timeout_in_seconds)

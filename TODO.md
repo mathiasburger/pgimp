@@ -13,4 +13,5 @@
 * add readonly mode where modifications can only be saved to another file and not be done in place
 * support different datatypes as parameters (int, string, bool, bytes, float) in get_param(name, type)
 * add library of convenience functions that can be imported
+* proper escaping of parameters passed by string
 
