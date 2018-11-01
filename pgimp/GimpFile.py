@@ -46,6 +46,7 @@ class GimpFile:
             import gimp
             import gimpenums
             import numpy as np
+            from pgimp.gimp.file import save_xcf
             
             image = gimp.pdb.gimp_image_new({0:d}, {1:d}, {2:d})
             layer = gimp.pdb.gimp_layer_new(image, image.width, image.height, {4:d}, '{5:s}', 100, gimpenums.NORMAL_MODE)
@@ -55,7 +56,7 @@ class GimpFile:
             region[: ,:] = bytes
             
             gimp.pdb.gimp_image_add_layer(image, layer, 0)
-            gimp.pdb.gimp_xcf_save(0, image, None, '{3:s}', '{3:s}')
+            save_xcf(image, '{3:s}')
             """
         ).format(width, height, image_type.value, self._file, layer_type, layer_name, tmpfile)
 
@@ -69,8 +70,9 @@ class GimpFile:
             import gimp
             import numpy as np
             import sys
+            from pgimp.gimp.file import open_xcf
             
-            image = gimp.pdb.gimp_file_load('{0:s}', '{0:s}')
+            image = open_xcf('{0:s}')
             layer_name = '{1:s}'
             layer = gimp.pdb.gimp_image_get_layer_by_name(image, layer_name)
             region = layer.get_pixel_rgn(0, 0, layer.width,layer.height)
@@ -95,8 +97,9 @@ class GimpFile:
             import gimp
             import gimpenums
             import numpy as np
+            from pgimp.gimp.file import open_xcf, save_xcf
 
-            image = gimp.pdb.gimp_file_load('{2:s}', '{2:s}')
+            image = open_xcf('{2:s}')
             layer = gimp.pdb.gimp_layer_new(image, {0:d}, {1:d}, {3:d}, '{4:s}', 100, gimpenums.NORMAL_MODE)
             layer.visible = {6:s}
             layer.opacity = float({7:s})
@@ -106,7 +109,7 @@ class GimpFile:
             region[: ,:] = bytes
 
             gimp.pdb.gimp_image_add_layer(image, layer, {8:d})
-            gimp.pdb.gimp_xcf_save(0, image, None, '{2:s}', '{2:s}')
+            save_xcf(image, '{2:s}')
             """
         ).format(width, height, self._file, layer_type, layer_name, tmpfile, str(visible), str(opacity), position)
 
@@ -139,16 +142,17 @@ class GimpFile:
             """
             import gimp
             import gimpenums
+            from pgimp.gimp.file import open_xcf, save_xcf
             
-            image_dst = gimp.pdb.gimp_file_load('{0:s}', '{0:s}')
-            image_src = gimp.pdb.gimp_file_load('{1:s}', '{1:s}')
+            image_dst = open_xcf('{0:s}')
+            image_src = open_xcf('{1:s}')
             layer_src = gimp.pdb.gimp_image_get_layer_by_name(image_src, '{3:s}')
             layer_dst = gimp.pdb.gimp_layer_new(image_dst, layer_src.width, layer_src.height, {4:d}, '{2:s}', 100, gimpenums.NORMAL_MODE)
             gimp.pdb.gimp_image_add_layer(image_dst, layer_dst, {5:d})
             gimp.pdb.gimp_edit_copy(layer_src)
             layer_floating = gimp.pdb.gimp_edit_paste(layer_dst, True)
             gimp.pdb.gimp_floating_sel_anchor(layer_floating)
-            gimp.pdb.gimp_xcf_save(0, image_dst, None, '{0:s}', '{0:s}')
+            save_xcf(image_dst, '{0:s}')
             """
         ).format(self._file, other_file._file, new_name or name, name, new_type.value, new_position)
 
@@ -159,15 +163,16 @@ class GimpFile:
             """
             import gimp
             import gimpenums
+            from pgimp.gimp.file import open_xcf, save_xcf
 
-            image_dst = gimp.pdb.gimp_file_load('{0:s}', '{0:s}')
-            image_src = gimp.pdb.gimp_file_load('{1:s}', '{1:s}')
+            image_dst = open_xcf('{0:s}')
+            image_src = open_xcf('{1:s}')
             layer_src = gimp.pdb.gimp_image_get_layer_by_name(image_src, '{2:s}')
             layer_dst = gimp.pdb.gimp_image_get_layer_by_name(image_dst, '{2:s}')
             gimp.pdb.gimp_edit_copy(layer_src)
             layer_floating = gimp.pdb.gimp_edit_paste(layer_dst, True)
             gimp.pdb.gimp_floating_sel_anchor(layer_floating)
-            gimp.pdb.gimp_xcf_save(0, image_dst, None, '{0:s}', '{0:s}')
+            save_xcf(image_dst, '{0:s}')
             """
         ).format(self._file, other_file._file, name)
 
@@ -180,9 +185,9 @@ class GimpFile:
         """
         code = textwrap.dedent(
             """
-            import gimp
+            from pgimp.gimp.file import open_xcf, save_xcf
             
-            image = gimp.pdb.gimp_file_load('{0:s}', '{0:s}')
+            image = open_xcf('{0:s}')
             
             result = []
             for layer in image.layers:

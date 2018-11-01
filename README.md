@@ -13,6 +13,11 @@ to write the skeleton.
 Running python code within gimp is performed by the `GimpScriptRunner`. Have a look at the corresponding test 
 `GimpScriptRunnerTest` to see how this works.
 
+## Convenience function library
+
+You may import convenience functions from `pgimp.gimp` in your gimp python scripts. 
+See `pgimp.GimpScriptRunnerTest.test_import_from_pgimp_library`.
+
 # Installation
 
 ## Local
