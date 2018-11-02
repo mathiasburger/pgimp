@@ -160,3 +160,27 @@ def test_convert_to_indexed_using_custom_colormap():
     assert np.all(values == layer_bg[:, :, 0])
     assert (1, 256, 1) == layer_values.shape
     assert np.all(values == layer_values[:, :, 0])
+
+
+def test_remove_layer():
+    tmp_file = tempfile.mktemp(suffix='.xcf')
+    layer = np.array([
+        [[255, 255, 255], [0, 0, 0], [255, 255, 255]],
+        [[255, 255, 255], [255, 255, 255], [255, 255, 255]],
+    ], dtype=np.uint8)
+
+    gimp_file = GimpFile(tmp_file)
+    gimp_file.create('Background', layer)
+    gimp_file.numpy_to_layer('Layer', layer)
+    all_layers = gimp_file.layer_names()
+
+    gimp_file.remove_layer('Background')
+    remaining_layers1 = gimp_file.layer_names()
+    gimp_file.remove_layer('Layer')
+    remaining_layers2 = gimp_file.layer_names()
+
+    os.remove(tmp_file)
+
+    assert ['Layer', 'Background'] == all_layers
+    assert ['Layer'] == remaining_layers1
+    assert [] == remaining_layers2

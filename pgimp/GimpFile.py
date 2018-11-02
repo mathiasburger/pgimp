@@ -41,8 +41,8 @@ class GimpFile:
         super().__init__()
         self._file = file
         self._gsr = GimpScriptRunner()
-        self._layer_conversion_timeout_in_seconds = 10
-        self._short_running_timeout_in_seconds = 5
+        self._layer_conversion_timeout_in_seconds = 20
+        self._short_running_timeout_in_seconds = 10
 
     def create(self, layer_name: str, layer_content: np.ndarray):
         height, width, depth, image_type, layer_type = self._numpy_array_info(layer_content)
@@ -299,3 +299,21 @@ class GimpFile:
             layers.append(Layer(layer_properties))
 
         return layers
+
+    def layer_names(self) -> List[str]:
+        return list(map(lambda l: l.name, self.layers()))
+
+    def remove_layer(self, layer_name: str):
+        code = textwrap.dedent(
+            """
+            import gimp
+            from pgimp.gimp.file import open_xcf, save_xcf
+
+            image = open_xcf('{0:s}')
+            layer = gimp.pdb.gimp_image_get_layer_by_name(image, '{1:s}')
+            gimp.pdb.gimp_image_remove_layer(image, layer)
+            save_xcf(image, '{0:s}')
+            """
+        ).format(escape_single_quotes(self._file), escape_single_quotes(layer_name))
+
+        self._gsr.execute(code, timeout_in_seconds=self._short_running_timeout_in_seconds)
