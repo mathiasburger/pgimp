@@ -10,6 +10,7 @@ import numpy as np
 from pgimp.GimpException import GimpException
 from pgimp.GimpScriptRunner import GimpScriptRunner
 from pgimp.layers.Layer import Layer
+from pgimp.util.string import escape_single_quotes
 
 
 class GimpFileType(Enum):
@@ -66,7 +67,15 @@ class GimpFile:
             gimp.pdb.gimp_image_add_layer(image, layer, 0)
             save_xcf(image, '{3:s}')
             """
-        ).format(width, height, image_type.value, self._file, layer_type, layer_name, tmpfile)
+        ).format(
+            width,
+            height,
+            image_type.value,
+            escape_single_quotes(self._file),
+            layer_type,
+            escape_single_quotes(layer_name),
+            escape_single_quotes(tmpfile)
+        )
 
         self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
 
@@ -107,7 +116,14 @@ class GimpFile:
         
             save_xcf(image, '{3:s}')
             """
-        ).format(colormap, layer_content.shape[1], layer_content.shape[0], self._file, layer_name, tmpfile)
+        ).format(
+            colormap,
+            layer_content.shape[1],
+            layer_content.shape[0],
+            escape_single_quotes(self._file),
+            escape_single_quotes(layer_name),
+            escape_single_quotes(tmpfile)
+        )
 
         self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
 
@@ -131,7 +147,10 @@ class GimpFile:
 
             np.save(sys.stdout, np_buffer)
             """
-        ).format(self._file, layer_name), timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
+        ).format(
+            escape_single_quotes(self._file),
+            escape_single_quotes(layer_name)
+        ), timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
 
         return np.load(io.BytesIO(bytes))
 
@@ -162,7 +181,17 @@ class GimpFile:
             gimp.pdb.gimp_image_add_layer(image, layer, {8:d})
             save_xcf(image, '{2:s}')
             """
-        ).format(width, height, self._file, layer_type, layer_name, tmpfile, str(visible), str(opacity), position)
+        ).format(
+            width,
+            height,
+            escape_single_quotes(self._file),
+            layer_type,
+            escape_single_quotes(layer_name),
+            escape_single_quotes(tmpfile),
+            str(visible),
+            str(opacity),
+            position
+        )
 
         self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
 
@@ -205,7 +234,14 @@ class GimpFile:
             gimp.pdb.gimp_floating_sel_anchor(layer_floating)
             save_xcf(image_dst, '{0:s}')
             """
-        ).format(self._file, other_file._file, new_name or name, name, new_type.value, new_position)
+        ).format(
+            escape_single_quotes(self._file),
+            escape_single_quotes(other_file._file),
+            escape_single_quotes(new_name or name),
+            escape_single_quotes(name),
+            new_type.value,
+            new_position
+        )
 
         self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
 
@@ -225,7 +261,11 @@ class GimpFile:
             gimp.pdb.gimp_floating_sel_anchor(layer_floating)
             save_xcf(image_dst, '{0:s}')
             """
-        ).format(self._file, other_file._file, name)
+        ).format(
+            escape_single_quotes(self._file),
+            escape_single_quotes(other_file._file),
+            escape_single_quotes(name)
+        )
 
         self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
 
@@ -249,7 +289,7 @@ class GimpFile:
                 result.append(properties)
             
             return_json(result)
-            """.format(self._file)
+            """.format(escape_single_quotes(self._file))
         )
 
         result = self._gsr.execute_and_parse_json(code, timeout_in_seconds=self._short_running_timeout_in_seconds)
