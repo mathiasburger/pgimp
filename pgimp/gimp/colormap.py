@@ -1,10 +1,9 @@
 """
 A colormap from opencv could be created like this:
-<pre>
-values = np.array([i for i in range(0, 256)], dtype=np.uint8)
-cmap = cv2.applyColorMap(values, cv2.COLORMAP_JET)
-cmap_bytes = cmap.tobytes()
-</pre>
+::
+    values = np.array([i for i in range(0, 256)], dtype=np.uint8)
+    cmap = cv2.applyColorMap(values, cv2.COLORMAP_JET)
+    cmap_bytes = cmap.tobytes()
 """
 
 import numpy as np
