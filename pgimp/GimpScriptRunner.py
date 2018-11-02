@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import subprocess
+from io import FileIO
 from typing import Dict, Union
 
 from pgimp.GimpException import GimpException
@@ -52,28 +53,56 @@ class GimpScriptRunner:
         self._working_directory = working_directory
         self._file_to_execute = None
 
-    def execute_file(self, file: str, *, parameters: dict=None, timeout_in_seconds: float=None) -> str:
+    def execute_file(self, file: str, *, parameters: dict=None, timeout_in_seconds: float=None, output_stream: FileIO = None, error_stream: FileIO = None) -> Union[str, None]:
         self._file_to_execute = file
         try:
-            result = self.execute('exec(open(get_parameter("__script_file__")).read(), globals())',
-                                  {**parameters, '__script_file__': file}, timeout_in_seconds)
+            result = self.execute(
+                'exec(open(get_parameter("__script_file__")).read(), globals())',
+                {**parameters, '__script_file__': file},
+                timeout_in_seconds,
+                output_stream=output_stream,
+                error_stream=error_stream
+            )
             return result
         finally:
             self._file_to_execute = None
 
-    def execute_and_parse_json(self, string: str, timeout_in_seconds: float=None) -> JsonType:
-        result = self.execute(string, timeout_in_seconds=timeout_in_seconds)
+    def execute_and_parse_json(self, string: str, timeout_in_seconds: float=None, error_stream: FileIO = None) -> JsonType:
+        result = self.execute(
+            string,
+            timeout_in_seconds=timeout_in_seconds,
+            error_stream=error_stream
+        )
         return self._parse(result)
 
-    def execute_binary(self, string: str, parameters: dict=None, timeout_in_seconds: float=None) -> bytes:
-        self._open_gimp(parameters)
-        return self._send_to_gimp(string, timeout_in_seconds, binary=True)
+    def execute_binary(self, string: str, parameters: dict=None, timeout_in_seconds: float=None, error_stream: FileIO = None) -> bytes:
+        return self._send_to_gimp(
+            string,
+            timeout_in_seconds,
+            binary=True,
+            parameters=parameters,
+            error_stream=error_stream
+        )
 
-    def execute(self, string: str, parameters: dict=None, timeout_in_seconds: float=None) -> str:
-        self._open_gimp(parameters)
-        return self._send_to_gimp(string, timeout_in_seconds)
+    def execute(self, string: str, parameters: dict=None, timeout_in_seconds: float=None, output_stream: FileIO = None, error_stream: FileIO = None) -> Union[str, None]:
+        return self._send_to_gimp(
+            string,
+            timeout_in_seconds,
+            parameters=parameters,
+            output_stream=output_stream,
+            error_stream=error_stream
+        )
 
-    def _open_gimp(self, parameters: dict=None):
+    def _send_to_gimp(
+        self,
+        code: str,
+        timeout_in_seconds: float=None,
+        binary=False,
+        parameters: dict=None,
+        output_stream: FileIO = None,
+        error_stream: FileIO = None
+    ) -> Union[str, bytes, None]:
+
         if not is_gimp_present():
             raise GimpNotInstalledException('A working gimp installation with gimp on the PATH is necessary.')
 
@@ -100,12 +129,11 @@ class GimpScriptRunner:
         self._gimp_process = subprocess.Popen(
             command,
             stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stdout=output_stream if output_stream else subprocess.PIPE,
+            stderr=error_stream if error_stream else subprocess.PIPE,
             env=gimp_environment,
         )
 
-    def _send_to_gimp(self, code: str, timeout_in_seconds: float=None, binary=False) -> Union[str, bytes]:
         initializer = file.get_content(file.relative_to(__file__, 'gimp/initializer.py')) + '\n'
         extend_path = "sys.path.append('{:s}')\n".format(os.path.dirname(os.path.dirname(__file__)))
         quit_gimp = '\npdb.gimp_quit(0)'
@@ -119,17 +147,25 @@ class GimpScriptRunner:
 
         if binary:
             stdout_content = stdout
+        elif output_stream:
+            stdout_content = None
+            output_stream.close()
         else:
             stdout_content = stdout.decode()
 
-        stderr_content = stderr.decode()
+        if error_stream:
+            stderr_content = None
+            error_stream.close()
+        else:
+            stderr_content = stderr.decode()
 
-        error_lines = stderr_content.strip().split('\n')
-        if error_lines[-1].startswith('__GIMP_SCRIPT_ERROR__'):
-            error_string: str = stderr_content.rsplit('\n', 1)[0] + '\n'
-            if self._file_to_execute:
-                error_string = error_string.replace('File "<string>"', 'File "{:s}"'.format(self._file_to_execute), 1)
-            raise GimpScriptException(error_string)
+        if stderr_content:
+            error_lines = stderr_content.strip().split('\n')
+            if error_lines[-1].startswith('__GIMP_SCRIPT_ERROR__'):
+                error_string: str = stderr_content.rsplit('\n', 1)[0] + '\n'
+                if self._file_to_execute:
+                    error_string = error_string.replace('File "<string>"', 'File "{:s}"'.format(self._file_to_execute), 1)
+                raise GimpScriptException(error_string)
 
         return stdout_content
 

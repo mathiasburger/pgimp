@@ -1,4 +1,6 @@
 import os
+import tempfile
+from io import FileIO
 from tempfile import mktemp
 
 import pytest
@@ -68,3 +70,37 @@ def test_import_from_pgimp_library():
     out = gsr.execute('from pgimp.gimp.file import *\nimage = open_xcf(\'{:s}\')\nprint(image.layers[0].name)'.format(gimp_file), timeout_in_seconds=1)
 
     assert 'Blue\n' == out
+
+
+def test_execute_with_output_stream():
+    tmpfile = tempfile.mktemp()
+
+    stream = FileIO(tmpfile, 'w')
+    out = gsr.execute(
+        "import time; time.sleep(1); print('1'); time.sleep(1); print('2'); time.sleep(1); print('3')",
+        output_stream=stream
+    )
+
+    assert out is None
+    assert stream.closed
+    with open(tmpfile, 'r') as fh:
+        assert '1\n2\n3\n' == fh.read()
+
+    os.remove(tmpfile)
+
+
+def test_execute_with_error_stream():
+    tmpfile = tempfile.mktemp()
+
+    stream = FileIO(tmpfile, 'w')
+    out = gsr.execute(
+        "print('1'); print('2'); print('3'); 1/0",
+        error_stream=stream
+    )
+
+    assert '1\n2\n3\n' == out
+    assert stream.closed
+    with open(tmpfile, 'r') as fh:
+        assert fh.read().endswith('__GIMP_SCRIPT_ERROR__ 1')
+
+    os.remove(tmpfile)
