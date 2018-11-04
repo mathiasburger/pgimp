@@ -10,9 +10,17 @@ Parameters are passed to scripts using environment variables and can be retreive
 get_parameter('parameter')
 ```
 
+Parameters of a specific type can be retrieved using helpers from `pgimp.gimp.parameter`:
+
+```
+from pgimp.gimp.parameter import *
+
+int_value = get_int('parameter')
+```
+
 ## Returning values
 
-Values can be returned as follows:
+Json can be returned as follows:
 
 ```
 return_json(obj)

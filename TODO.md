@@ -1,5 +1,3 @@
-* some functions METHOD in the gimp classes can be found in the pdb under gimp-CLASS-METHOD,
-  but others not (like Layer.get_pixel_rgn) 
 * add a tested set of convenience functions for gimp python scripts that can be imported
 * try sphinx for documentation
 * use doctest for checking if code within docblocks is working
