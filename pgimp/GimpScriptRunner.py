@@ -67,9 +67,10 @@ class GimpScriptRunner:
         finally:
             self._file_to_execute = None
 
-    def execute_and_parse_json(self, string: str, timeout_in_seconds: float=None, error_stream: FileIO = None) -> JsonType:
+    def execute_and_parse_json(self, string: str, parameters: dict=None, timeout_in_seconds: float=None, error_stream: FileIO = None) -> JsonType:
         result = self.execute(
             string,
+            parameters=parameters,
             timeout_in_seconds=timeout_in_seconds,
             error_stream=error_stream
         )
@@ -124,7 +125,18 @@ class GimpScriptRunner:
         gimp_environment.update({k: v for k, v in self._environment.items() if self._environment[k] is not None})
 
         parameters = parameters or {}
-        gimp_environment.update({k: v for k, v in parameters.items() if parameters[k] is not None})
+        parameters_parsed = {}
+        for parameter, value in parameters.items():
+            if isinstance(value, str):
+                parameters_parsed[parameter] = value
+            elif isinstance(value, bool) or isinstance(value, int) or isinstance(value, float) or isinstance(value, bytes):
+                parameters_parsed[parameter] = repr(value)
+            elif isinstance(value, list) or isinstance(value, tuple) or isinstance(value, dict):
+                parameters_parsed[parameter] = json.dumps(value)
+            else:
+                raise GimpScriptException('Cannot interpret parameter type {:s}'.format(type(value).__name__))
+
+        gimp_environment.update({k: v for k, v in parameters_parsed.items() if parameters_parsed[k] is not None})
 
         self._gimp_process = subprocess.Popen(
             command,

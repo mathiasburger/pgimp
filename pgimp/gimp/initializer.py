@@ -15,7 +15,9 @@ os.chdir(os.environ['__working_directory__'])
 sys.path.append(os.getcwd())
 
 
-def get_parameter(name):
+def get_parameter(name, default=None):
+    if default is not None and name not in os.environ:
+        return default
     return os.environ[name]
 
 
