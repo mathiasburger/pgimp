@@ -3,9 +3,10 @@ from setuptools import setup
 from pgimp.doc.GimpDocumentationGenerator import GimpDocumentationGenerator
 from pgimp.doc.output.OutputPythonSkeleton import OutputPythonSkeleton
 from pgimp.util import file
+from pgimp import __version__
 
 setup(name='pgimp',
-      version='1.0',
+      version=__version__,
       description='Call gimp routines from python3 code.',
       url='https://github.com/mabu-github/pgimp',
       author='Mathias Burger',
