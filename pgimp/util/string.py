@@ -6,7 +6,5 @@ def escape_single_quotes(string: str):
 
     >>> print("print('{:s}')".format(escape_single_quotes("'")))
     print('\\'')
-
-    :return:
     """
     return string.replace("'", "\\'")

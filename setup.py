@@ -3,16 +3,16 @@ from setuptools import setup
 from pgimp.doc.GimpDocumentationGenerator import GimpDocumentationGenerator
 from pgimp.doc.output.OutputPythonSkeleton import OutputPythonSkeleton
 from pgimp.util import file
-from pgimp import __version__
+from pgimp import __version__, project
 
-setup(name='pgimp',
+setup(name=project,
       version=__version__,
       description='Call gimp routines from python3 code.',
       url='https://github.com/mabu-github/pgimp',
       author='Mathias Burger',
       author_email='mathias.burger@gmail.com',
       license='MIT',
-      packages=['pgimp'],
+      packages=[project],
       zip_safe=False)
 
 generate_python_skeleton = GimpDocumentationGenerator(OutputPythonSkeleton(
