@@ -46,6 +46,20 @@ def is_xvfb_present():
 
 
 class GimpScriptRunner:
+    """
+    Executes python2 scripts within gimp's python interpreter and is used to create
+    higher-level functionality and abstractions that can be used in python3.
+
+    When the virtual framebuffer xvfb is installed, it will be automatically used
+    and no other windowing system is required. This is important for batch jobs on
+    machines that do not provide a graphical user interface.
+
+    Example:
+
+    >>> from pgimp.GimpScriptRunner import GimpScriptRunner
+    >>> GimpScriptRunner().execute('print("Hello from within gimp")')
+    'Hello from within gimp\\n'
+    """
     def __init__(self, environment: Dict[str, str]=None, working_directory=os.getcwd()) -> None:
         super().__init__()
         self._gimp_process: subprocess.Popen = None
@@ -54,7 +68,20 @@ class GimpScriptRunner:
         self._file_to_execute = None
 
     def execute_file(self, file: str, *, parameters: dict=None, timeout_in_seconds: float=None, output_stream: FileIO = None, error_stream: FileIO = None) -> Union[str, None]:
+        """
+        Execute a script from a file within gimp's python interpreter.
+
+        Example:
+
+        >>> from pgimp.GimpScriptRunner import GimpScriptRunner
+        >>> from pgimp.util.file import relative_to
+        >>> GimpScriptRunner().execute_file(relative_to(__file__, 'test-resources/hello.py'))
+        'Hello from within gimp\\n'
+
+        See also :py:meth:`~pgimp.GimpScriptRunner.GimpScriptRunner.execute`.
+        """
         self._file_to_execute = file
+        parameters = parameters or {}
         try:
             result = self.execute(
                 'exec(open(get_parameter("__script_file__")).read(), globals())',
@@ -68,6 +95,17 @@ class GimpScriptRunner:
             self._file_to_execute = None
 
     def execute_and_parse_json(self, string: str, parameters: dict=None, timeout_in_seconds: float=None, error_stream: FileIO = None) -> JsonType:
+        """
+        Execute a given piece of code within gimp's python interpreter and decode the result to json.
+
+        Example:
+
+        >>> from pgimp.GimpScriptRunner import GimpScriptRunner
+        >>> GimpScriptRunner().execute_and_parse_json('return_json({"a": "b", "c": [1, 2]})')['c']
+        [1, 2]
+
+        See also :py:meth:`~pgimp.GimpScriptRunner.GimpScriptRunner.execute`.
+        """
         result = self.execute(
             string,
             parameters=parameters,
@@ -77,6 +115,25 @@ class GimpScriptRunner:
         return self._parse(result)
 
     def execute_binary(self, string: str, parameters: dict=None, timeout_in_seconds: float=None, error_stream: FileIO = None) -> bytes:
+        """
+        Execute a given piece of code within gimp's python interpreter and decode the result to bytes.
+
+        Example:
+
+        >>> import numpy as np
+        >>> from pgimp.GimpScriptRunner import GimpScriptRunner
+        >>> print(
+        ...     np.frombuffer(
+        ...         GimpScriptRunner().execute_binary(
+        ...             "from pgimp.gimp.parameter import *; import sys; sys.stdout.write(get_bytes('arr'))",
+        ...             parameters={"arr": np.array([i for i in range(0, 3)], dtype=np.uint8).tobytes()}),
+        ...             dtype=np.uint8
+        ...     )
+        ... )
+        [0 1 2]
+
+        See also :py:meth:`~pgimp.GimpScriptRunner.GimpScriptRunner.execute`.
+        """
         return self._send_to_gimp(
             string,
             timeout_in_seconds,
@@ -86,6 +143,9 @@ class GimpScriptRunner:
         )
 
     def execute(self, string: str, parameters: dict=None, timeout_in_seconds: float=None, output_stream: FileIO = None, error_stream: FileIO = None) -> Union[str, None]:
+        """
+        Execute a given piece of code within gimp's python interpreter.
+        """
         return self._send_to_gimp(
             string,
             timeout_in_seconds,
