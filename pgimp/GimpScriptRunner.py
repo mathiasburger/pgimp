@@ -22,18 +22,23 @@ JsonType = Union[None, bool, int, float, str, list, dict]
 
 
 class GimpNotInstalledException(GimpException):
-    pass
-
-
-class GimpNotRunningException(GimpException):
+    """
+    Indicates that gimp needs to be installed on the system in order for the software to work.
+    """
     pass
 
 
 class GimpScriptException(GimpException):
+    """
+    Indicates a general error that occurred while trying to execute the script.
+    """
     pass
 
 
 class GimpScriptExecutionTimeoutException(GimpException):
+    """
+    Thrown when the script execution time exceeds the specified timeout.
+    """
     pass
 
 
@@ -133,6 +138,8 @@ class GimpScriptRunner:
         [0 1 2]
 
         See also :py:meth:`~pgimp.GimpScriptRunner.GimpScriptRunner.execute`.
+
+        :return: Raw bytes to be decoded to your target type.
         """
         return self._send_to_gimp(
             string,
@@ -142,9 +149,29 @@ class GimpScriptRunner:
             error_stream=error_stream
         )
 
-    def execute(self, string: str, parameters: dict=None, timeout_in_seconds: float=None, output_stream: FileIO = None, error_stream: FileIO = None) -> Union[str, None]:
+    def execute(
+        self,
+        string: str,
+        parameters: Dict[str, Union[bool, int, float, str, bytes, list, tuple, dict]]=None,
+        timeout_in_seconds: float=None,
+        output_stream: FileIO = None,
+        error_stream: FileIO = None
+    ) -> Union[str, None]:
         """
         Execute a given piece of code within gimp's python interpreter.
+
+        Example:
+
+        >>> from pgimp.GimpScriptRunner import GimpScriptRunner
+        >>> GimpScriptRunner().execute('print("Hello from within gimp")')
+        'Hello from within gimp\\n'
+
+        :param string: The code to be executed as string.
+        :param parameters: Parameter names and values. Supported types will be encoded as string, be passed to the script and be decoded there.
+        :param timeout_in_seconds: How long to wait for completion in seconds until a :py:class:`~pgimp.GimpScriptRunner.GimpScriptExecutionTimeoutException` is thrown.
+        :param output_stream: If absent, the method will return the output, otherwise it will be written diretcly to the stream.
+        :param error_stream: If absent, an exception will be thrown if errors occur. Otherwise errors will be written directly to the stream.
+        :return: The output produced by the script if no output stream is defined.
         """
         return self._send_to_gimp(
             string,

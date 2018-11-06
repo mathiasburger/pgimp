@@ -1,7 +1,7 @@
 class GimpException(Exception):
     """
     When pgimp encounters a gimp related exception, it will automatically map it onto
-    `GimpException` or a subtype so that you can easily handle gimp related errors.
+    :py:class:`~pgimp.GimpException` or a subtype so that you can easily handle gimp related errors.
 
     Example:
 
