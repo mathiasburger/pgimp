@@ -33,10 +33,26 @@ image_type_to_layer_type = {
 
 
 class DataFormatException(GimpException):
+    """
+    Indicates that data is in an unexpected or wrong format.
+    """
     pass
 
 
 class GimpFile:
+    """
+    Encapsulates functionality related to modifying gimp's xcf files and retreiving information from them.
+
+    Example:
+
+    >>> from pgimp.GimpFile import GimpFile
+    >>> from pgimp.util.TempFile import TempFile
+    >>> import numpy as np
+    >>> with TempFile('.xcf') as f:
+    ...     gimp_file = GimpFile(f).create('Background', np.zeros(shape=(32, 32), dtype=np.uint8))
+    ...     gimp_file.layer_names()
+    ['Background']
+    """
     def __init__(self, file: str) -> None:
         super().__init__()
         self._file = file
@@ -44,7 +60,7 @@ class GimpFile:
         self._layer_conversion_timeout_in_seconds = 20
         self._short_running_timeout_in_seconds = 10
 
-    def create(self, layer_name: str, layer_content: np.ndarray):
+    def create(self, layer_name: str, layer_content: np.ndarray) -> 'GimpFile':
         height, width, depth, image_type, layer_type = self._numpy_array_info(layer_content)
 
         tmpfile = tempfile.mktemp(suffix='.npy')
@@ -80,8 +96,9 @@ class GimpFile:
         self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
 
         os.remove(tmpfile)
+        return self
 
-    def create_indexed(self, layer_name: str, layer_content: np.ndarray, colormap: Union[np.ndarray, ColorMap]):
+    def create_indexed(self, layer_name: str, layer_content: np.ndarray, colormap: Union[np.ndarray, ColorMap]) -> 'GimpFile':
         if isinstance(colormap, np.ndarray):
             if not len(layer_content.shape) == 2 and not (len(layer_content.shape) == 3 and layer_content.shape[2] == 1):
                 raise DataFormatException('Indexed images can only contain one channel')
@@ -128,6 +145,7 @@ class GimpFile:
         self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
 
         os.remove(tmpfile)
+        return self
 
     def layer_to_numpy(self, layer_name: str) -> np.ndarray:
         bytes = self._gsr.execute_binary(textwrap.dedent(
@@ -154,7 +172,7 @@ class GimpFile:
 
         return np.load(io.BytesIO(bytes))
 
-    def numpy_to_layer(self, layer_name: str, layer_content: np.ndarray, opacity: float=100.0, visible: bool=True, position: int=0, type: LayerType=None):
+    def numpy_to_layer(self, layer_name: str, layer_content: np.ndarray, opacity: float=100.0, visible: bool=True, position: int=0, type: LayerType=None) -> 'GimpFile':
         height, width, depth, image_type, layer_type = self._numpy_array_info(layer_content)
         if type is not None:
             layer_type = type.value
@@ -196,6 +214,7 @@ class GimpFile:
         self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
 
         os.remove(tmpfile)
+        return self
 
     def _numpy_array_info(self, content: np.ndarray):
         if len(content.shape) == 2:
@@ -217,7 +236,7 @@ class GimpFile:
 
         return height, width, depth, image_type, layer_type
 
-    def add_layer_from(self, other_file: 'GimpFile', name: str, new_name: str=None, new_type: GimpFileType=GimpFileType.RGB, new_position: int=0):
+    def add_layer_from(self, other_file: 'GimpFile', name: str, new_name: str=None, new_type: GimpFileType=GimpFileType.RGB, new_position: int=0) -> 'GimpFile':
         code = textwrap.dedent(
             """
             import gimp
@@ -244,8 +263,9 @@ class GimpFile:
         )
 
         self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
+        return self
 
-    def merge_layer_from(self, other_file: 'GimpFile', name: str):
+    def merge_layer_from(self, other_file: 'GimpFile', name: str) -> 'GimpFile':
         code = textwrap.dedent(
             """
             import gimp
@@ -268,6 +288,7 @@ class GimpFile:
         )
 
         self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
+        return self
 
     def layers(self) -> List[Layer]:
         """
@@ -303,7 +324,7 @@ class GimpFile:
     def layer_names(self) -> List[str]:
         return list(map(lambda l: l.name, self.layers()))
 
-    def remove_layer(self, layer_name: str):
+    def remove_layer(self, layer_name: str) -> 'GimpFile':
         code = textwrap.dedent(
             """
             import gimp
@@ -317,3 +338,4 @@ class GimpFile:
         ).format(escape_single_quotes(self._file), escape_single_quotes(layer_name))
 
         self._gsr.execute(code, timeout_in_seconds=self._short_running_timeout_in_seconds)
+        return self

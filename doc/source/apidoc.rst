@@ -1,35 +1,8 @@
 API Documentation
 =================
 
-Exception Handling
---------------
+.. toctree::
+   :maxdepth: 2
 
-.. autoclass:: pgimp.GimpException.GimpException
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. autoclass:: pgimp.GimpScriptRunner.GimpNotInstalledException
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. autoclass:: pgimp.GimpScriptRunner.GimpScriptException
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. autoclass:: pgimp.GimpScriptRunner.GimpScriptExecutionTimeoutException
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-Interacting with Gimp
----------------------
-
-.. autoclass:: pgimp.GimpScriptRunner.GimpScriptRunner
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. autoclass:: pgimp.GimpFile.GimpFile
+    Exception Handling <exception_handling.rst>
+    Gimp Interaction <gimp_interaction.rst>
