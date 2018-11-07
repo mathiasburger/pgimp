@@ -172,7 +172,7 @@ class GimpFile:
 
         return np.load(io.BytesIO(bytes))
 
-    def numpy_to_layer(self, layer_name: str, layer_content: np.ndarray, opacity: float=100.0, visible: bool=True, position: int=0, type: LayerType=None) -> 'GimpFile':
+    def add_layer_from_numpy(self, layer_name: str, layer_content: np.ndarray, opacity: float=100.0, visible: bool=True, position: int=0, type: LayerType=None) -> 'GimpFile':
         height, width, depth, image_type, layer_type = self._numpy_array_info(layer_content)
         if type is not None:
             layer_type = type.value
@@ -236,7 +236,7 @@ class GimpFile:
 
         return height, width, depth, image_type, layer_type
 
-    def add_layer_from(self, other_file: 'GimpFile', name: str, new_name: str=None, new_type: GimpFileType=GimpFileType.RGB, new_position: int=0) -> 'GimpFile':
+    def add_layer_from_file(self, other_file: 'GimpFile', name: str, new_name: str=None, new_type: GimpFileType=GimpFileType.RGB, new_position: int=0) -> 'GimpFile':
         code = textwrap.dedent(
             """
             import gimp

@@ -64,7 +64,7 @@ def test_numpy_to_layer():
 
     gimp_file = GimpFile(tmp_file)
     gimp_file.create('Background', layer_bg)
-    gimp_file.numpy_to_layer('Foreground', layer_fg, opacity=55., visible=False)
+    gimp_file.add_layer_from_numpy('Foreground', layer_fg, opacity=55., visible=False)
 
     actual_bg = gimp_file.layer_to_numpy('Background')
     actual_fg = gimp_file.layer_to_numpy('Foreground')
@@ -85,7 +85,7 @@ def test_add_layer_from():
 
     gimp_file = GimpFile(tmp_file)
     gimp_file.create('Background', layer_bg)
-    gimp_file.add_layer_from(black_and_yellow_file, 'Yellow', new_name='Yellow (copied)', new_position=position)
+    gimp_file.add_layer_from_file(black_and_yellow_file, 'Yellow', new_name='Yellow (copied)', new_position=position)
 
     assert 'Yellow (copied)' == gimp_file.layers()[position].name
     assert np.all([240, 255, 0] == gimp_file.layer_to_numpy('Yellow (copied)'))
@@ -127,7 +127,7 @@ def test_convert_to_indexed_using_predefined_colormap():
 
     gimp_file = GimpFile(tmp_file)
     gimp_file.create_indexed('Background', values, ColorMap.JET)
-    gimp_file.numpy_to_layer('Values', values, type=LayerType.INDEXED)
+    gimp_file.add_layer_from_numpy('Values', values, type=LayerType.INDEXED)
 
     layer_bg = gimp_file.layer_to_numpy('Background')
     layer_values = gimp_file.layer_to_numpy('Values')
@@ -149,7 +149,7 @@ def test_convert_to_indexed_using_custom_colormap():
 
     gimp_file = GimpFile(tmp_file)
     gimp_file.create_indexed('Background', values, colormap=colormap)
-    gimp_file.numpy_to_layer('Values', values, type=LayerType.INDEXED)
+    gimp_file.add_layer_from_numpy('Values', values, type=LayerType.INDEXED)
 
     layer_bg = gimp_file.layer_to_numpy('Background')
     layer_values = gimp_file.layer_to_numpy('Values')
@@ -171,7 +171,7 @@ def test_remove_layer():
 
     gimp_file = GimpFile(tmp_file)
     gimp_file.create('Background', layer)
-    gimp_file.numpy_to_layer('Layer', layer)
+    gimp_file.add_layer_from_numpy('Layer', layer)
     all_layers = gimp_file.layer_names()
 
     gimp_file.remove_layer('Background')
