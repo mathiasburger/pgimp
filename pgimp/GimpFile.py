@@ -61,6 +61,23 @@ class GimpFile:
         self._short_running_timeout_in_seconds = 10
 
     def create(self, layer_name: str, layer_content: np.ndarray) -> 'GimpFile':
+        """
+        Create a new gimp image with one layer from a numpy array.
+
+        Example:
+
+        >>> from pgimp.GimpFile import GimpFile
+        >>> from pgimp.util.TempFile import TempFile
+        >>> import numpy as np
+        >>> with TempFile('.xcf') as f:
+        ...     gimp_file = GimpFile(f).create('Background', np.zeros(shape=(32, 32), dtype=np.uint8))
+        ...     gimp_file.layer_names()
+        ['Background']
+
+        :param layer_name: Name of the layer to create.
+        :param layer_content: Layer content, usually in the format of unsigned 8 bit integers.
+        :return: :py:class:`~pgimp.GimpFile.GimpFile`
+        """
         height, width, depth, image_type, layer_type = self._numpy_array_info(layer_content)
 
         tmpfile = tempfile.mktemp(suffix='.npy')
@@ -78,7 +95,7 @@ class GimpFile:
             array = np.load('{6:s}')
             bytes = np.uint8(array).tobytes()
             region = layer.get_pixel_rgn(0, 0, layer.width, layer.height, True)
-            region[: ,:] = bytes
+            region[: ,:] = bytes`
             
             gimp.pdb.gimp_image_add_layer(image, layer, 0)
             save_xcf(image, '{3:s}')
@@ -99,6 +116,40 @@ class GimpFile:
         return self
 
     def create_indexed(self, layer_name: str, layer_content: np.ndarray, colormap: Union[np.ndarray, ColorMap]) -> 'GimpFile':
+        """
+        Create a new indexed gimp image with one layer from a numpy array. An indexed image has a single channel
+        and displays the values using a colormap.
+
+        Example using a predefined colormap:
+
+        >>> from pgimp.GimpFile import GimpFile
+        >>> from pgimp.util.TempFile import TempFile
+        >>> from pgimp.GimpFile import ColorMap
+        >>> import numpy as np
+        >>> with TempFile('.xcf') as f:
+        ...     gimp_file = GimpFile(f).create_indexed(
+        ...         'Background',
+        ...         np.arange(0, 256, dtype=np.uint8).reshape((256, 1)),
+        ...         ColorMap.JET
+        ...     )
+
+        Example using a custom colormap:
+
+        >>> from pgimp.GimpFile import GimpFile
+        >>> from pgimp.util.TempFile import TempFile
+        >>> from pgimp.GimpFile import ColorMap
+        >>> import numpy as np
+        >>> with TempFile('.xcf') as f:
+        ...     gimp_file = GimpFile(f).create_indexed(
+        ...         'Background',
+        ...         np.arange(0, 256, dtype=np.uint8).reshape((256, 1)),
+        ...         np.array([[255, 0, 0], [0, 255, 0], [0, 0, 255], *[[i, i, i] for i in range(3, 256)]], dtype=np.uint8)
+        ...     )
+
+        :param layer_name: Name of the layer to create.
+        :param layer_content: Layer content, usually in the format of unsigned 8 bit integers.
+        :return: :py:class:`~pgimp.GimpFile.GimpFile`
+        """
         if isinstance(colormap, np.ndarray):
             if not len(layer_content.shape) == 2 and not (len(layer_content.shape) == 3 and layer_content.shape[2] == 1):
                 raise DataFormatException('Indexed images can only contain one channel')

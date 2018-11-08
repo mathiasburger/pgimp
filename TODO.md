@@ -5,3 +5,4 @@
 * add readonly mode where modifications can only be saved to another file and not be done in place
 * add contributors file like https://github.com/parrt/sample-jetbrains-plugin/blob/master/contributors.txt
 * document parameters of pgimp.GimpScriptRunner.GimpScriptRunner#execute and other execute* parameters that are additional to the ones in execute()
+* add create empty image method create_empty() in GimpFile
