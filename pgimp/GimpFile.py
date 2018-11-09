@@ -95,7 +95,7 @@ class GimpFile:
             array = np.load('{6:s}')
             bytes = np.uint8(array).tobytes()
             region = layer.get_pixel_rgn(0, 0, layer.width, layer.height, True)
-            region[: ,:] = bytes`
+            region[: ,:] = bytes
             
             gimp.pdb.gimp_image_add_layer(image, layer, 0)
             save_xcf(image, '{3:s}')
@@ -129,7 +129,7 @@ class GimpFile:
         >>> with TempFile('.xcf') as f:
         ...     gimp_file = GimpFile(f).create_indexed(
         ...         'Background',
-        ...         np.arange(0, 256, dtype=np.uint8).reshape((256, 1)),
+        ...         np.arange(0, 256, dtype=np.uint8).reshape((1, 256)),
         ...         ColorMap.JET
         ...     )
 
@@ -142,7 +142,7 @@ class GimpFile:
         >>> with TempFile('.xcf') as f:
         ...     gimp_file = GimpFile(f).create_indexed(
         ...         'Background',
-        ...         np.arange(0, 256, dtype=np.uint8).reshape((256, 1)),
+        ...         np.arange(0, 256, dtype=np.uint8).reshape((1, 256)),
         ...         np.array([[255, 0, 0], [0, 255, 0], [0, 0, 255], *[[i, i, i] for i in range(3, 256)]], dtype=np.uint8)
         ...     )
 
@@ -199,6 +199,22 @@ class GimpFile:
         return self
 
     def layer_to_numpy(self, layer_name: str) -> np.ndarray:
+        """
+        Convert a gimp layer to a numpy array of unsigned 8 bit integers.
+
+        Example:
+
+        >>> from pgimp.GimpFile import GimpFile
+        >>> from pgimp.util.TempFile import TempFile
+        >>> import numpy as np
+        >>> with TempFile('.xcf') as f:
+        ...     gimp_file = GimpFile(f).create('Background', np.zeros(shape=(1, 2, 1), dtype=np.uint8))
+        ...     gimp_file.layer_to_numpy('Background').shape
+        (1, 2, 1)
+
+        :param layer_name: Name of the layer to convert.
+        :return: Numpy array of unsigned 8 bit integers.
+        """
         bytes = self._gsr.execute_binary(textwrap.dedent(
             """
             import gimp
@@ -224,6 +240,29 @@ class GimpFile:
         return np.load(io.BytesIO(bytes))
 
     def add_layer_from_numpy(self, layer_name: str, layer_content: np.ndarray, opacity: float=100.0, visible: bool=True, position: int=0, type: LayerType=None) -> 'GimpFile':
+        """
+        Adds a new layer to the gimp file from numpy data, usually as unsigned 8 bit integers.
+
+        Example:
+
+        >>> from pgimp.GimpFile import GimpFile
+        >>> from pgimp.util.TempFile import TempFile
+        >>> import numpy as np
+        >>> with TempFile('.xcf') as f:  # doctest:+ELLIPSIS
+        ...     gimp_file = GimpFile(f).create('Background', np.zeros(shape=(1, 2), dtype=np.uint8))
+        ...     gimp_file.add_layer_from_numpy('Foreground', np.ones(shape=(1, 2)), opacity=55., visible=False)
+        ...     gimp_file.layer_names()
+        <...>
+        ['Foreground', 'Background']
+
+        :param layer_name:
+        :param layer_content:
+        :param opacity:
+        :param visible:
+        :param position:
+        :param type:
+        :return:
+        """
         height, width, depth, image_type, layer_type = self._numpy_array_info(layer_content)
         if type is not None:
             layer_type = type.value
