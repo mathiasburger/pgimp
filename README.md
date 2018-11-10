@@ -20,6 +20,27 @@ See `pgimp.GimpScriptRunnerTest.test_import_from_pgimp_library`.
 
 # Installation
 
+## Operating system dependent infos
+
+### Linux
+
+On Linux, install the gimp package, e.g. `sudo apt-get install gimp` for Debian/Ubuntu. 
+
+### Mac OS
+
+Install gimp from gimp.org or via homebrew.
+```
+
+### Windows
+
+Windows is not supported.
+
+## From github
+
+```
+pip3 install git+https://github.com/mabu-github/pgimp
+```
+
 ## Local
 
 Install using symlink to checked out code (for development):

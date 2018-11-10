@@ -25,3 +25,10 @@ Exception Handling
     :members:
     :undoc-members:
     :show-inheritance:
+
+.. autoclass:: pgimp.GimpFile.GimpUnsupportedOSException
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+

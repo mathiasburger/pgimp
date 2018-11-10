@@ -2,6 +2,8 @@ import json
 import os
 import shutil
 import subprocess
+import sys
+from glob import glob
 from io import FileIO
 from typing import Dict, Union
 
@@ -42,8 +44,41 @@ class GimpScriptExecutionTimeoutException(GimpException):
     pass
 
 
+class GimpUnsupportedOSException(GimpException):
+    """
+    Indicates that your operating system is not supported.
+    """
+    pass
+
+
+_path_to_gimp_executable = None
+
+
+def path_to_gimp_executable():
+    global _path_to_gimp_executable
+
+    if _path_to_gimp_executable is not None:
+        return _path_to_gimp_executable
+
+    if sys.platform == 'darwin':
+        locations = [
+            '/Applications/GIMP*.app/Contents/MacOS/gimp',
+            '~/Applications/GIMP*.app/Contents/MacOS/gimp',
+        ]
+        for location in locations:
+            location = glob(location)
+            if len(location) > 0:
+                _path_to_gimp_executable = location[0]
+    elif sys.platform == 'linux' or sys.platform == 'linux2':
+        _path_to_gimp_executable = shutil.which(EXECUTABLE_GIMP)
+    else:
+        raise GimpUnsupportedOSException('Your operating system "{:s}" is not supported.'.format(sys.platform))
+
+    return _path_to_gimp_executable
+
+
 def is_gimp_present():
-    return shutil.which(EXECUTABLE_GIMP) is not None
+    return path_to_gimp_executable() is not None
 
 
 def is_xvfb_present():
@@ -197,7 +232,7 @@ class GimpScriptRunner:
         command = []
         if is_xvfb_present():
             command.append(shutil.which('xvfb-run'))
-        command.append(shutil.which('gimp'))
+        command.append(path_to_gimp_executable())
         command.extend([
             FLAG_NO_INTERFACE,
             FLAG_NO_DATA,
