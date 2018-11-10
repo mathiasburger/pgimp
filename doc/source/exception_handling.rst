@@ -26,7 +26,7 @@ Exception Handling
     :undoc-members:
     :show-inheritance:
 
-.. autoclass:: pgimp.GimpFile.GimpUnsupportedOSException
+.. autoclass:: pgimp.GimpScriptRunner.GimpUnsupportedOSException
     :members:
     :undoc-members:
     :show-inheritance:
