@@ -102,7 +102,7 @@ class GimpScriptRunner:
     """
     def __init__(self, environment: Dict[str, str]=None, working_directory=os.getcwd()) -> None:
         super().__init__()
-        self._gimp_process: subprocess.Popen = None
+        self._gimp_process = None
         self._environment = environment or {}
         self._working_directory = working_directory
         self._file_to_execute = None
