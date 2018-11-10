@@ -4,7 +4,7 @@ import tempfile
 import numpy as np
 from pytest import approx
 
-from pgimp.GimpFile import GimpFile, LayerType, ColorMap
+from pgimp.GimpFile import GimpFile, LayerType, ColorMap, GimpFileType
 from pgimp.util import file
 from pgimp.util.TempFile import TempFile
 
@@ -203,3 +203,10 @@ def test_create_from_template():
         created_file = GimpFile(created).create_from_template(original_file)
         assert [] == created_file.layer_names()
         assert (2, 3) == created_file.dimensions()
+
+
+def test_create_empty():
+    with TempFile('.xcf') as f:
+        gimp_file = GimpFile(f).create_empty(3, 2, GimpFileType.RGB)
+        assert (3, 2) == gimp_file.dimensions()
+        assert [] == gimp_file.layer_names()

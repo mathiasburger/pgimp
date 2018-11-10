@@ -17,6 +17,7 @@ from pgimp.util.string import escape_single_quotes
 class GimpFileType(Enum):
     RGB = 0
     GRAY = 1
+    INDEXED = 2
 
 
 class LayerType(Enum):
@@ -43,6 +44,8 @@ class DataFormatException(GimpException):
 class GimpFile:
     """
     Encapsulates functionality related to modifying gimp's xcf files and retreiving information from them.
+
+    When interacting with numpy, please note that the array must be row-major (y,x-indexed).
 
     Example:
 
@@ -77,7 +80,7 @@ class GimpFile:
 
         :param layer_name: Name of the layer to create.
         :param layer_content: Layer content, usually in the format of unsigned 8 bit integers.
-        :return: :py:class:`~pgimp.GimpFile.GimpFile`
+        :return: The newly created :py:class:`~pgimp.GimpFile.GimpFile`.
         """
         height, width, depth, image_type, layer_type = self._numpy_array_info(layer_content)
 
@@ -116,6 +119,36 @@ class GimpFile:
         os.remove(tmpfile)
         return self
 
+    def create_empty(self, width: int, height: int, type: GimpFileType) -> 'GimpFile':
+        """
+        Creates an empty image without any layers.
+
+        Example:
+
+        >>> from pgimp.GimpFile import GimpFile, GimpFileType
+        >>> from pgimp.util.TempFile import TempFile
+        >>> with TempFile('.xcf') as f:
+        ...     gimp_file = GimpFile(f).create_empty(3, 2, GimpFileType.RGB)
+        ...     gimp_file.layer_names()
+        []
+
+        :param width: Image width.
+        :param height: Image height.
+        :param type: Image type, e.g. rgb or gray.
+        :return: The newly created :py:class:`~pgimp.GimpFile.GimpFile`.
+        """
+        code = textwrap.dedent(
+            """
+            import gimp
+            from pgimp.gimp.file import save_xcf
+            image = gimp.pdb.gimp_image_new({0:d}, {1:d}, {2:d})
+            save_xcf(image, '{3:s}')
+            """
+        ).format(width, height, type.value, escape_single_quotes(self._file))
+
+        self._gsr.execute(code, timeout_in_seconds=self._short_running_timeout_in_seconds)
+        return self
+
     def create_indexed(self, layer_name: str, layer_content: np.ndarray, colormap: Union[np.ndarray, ColorMap]) -> 'GimpFile':
         """
         Create a new indexed gimp image with one layer from a numpy array. An indexed image has a single channel
@@ -152,7 +185,7 @@ class GimpFile:
 
         :param layer_name: Name of the layer to create.
         :param layer_content: Layer content, usually in the format of unsigned 8 bit integers.
-        :return: :py:class:`~pgimp.GimpFile.GimpFile`
+        :return: The newly created :py:class:`~pgimp.GimpFile.GimpFile`.
         """
         if isinstance(colormap, np.ndarray):
             if not len(layer_content.shape) == 2 and not (len(layer_content.shape) == 3 and layer_content.shape[2] == 1):
