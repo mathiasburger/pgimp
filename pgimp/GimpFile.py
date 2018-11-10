@@ -255,13 +255,13 @@ class GimpFile:
         <...>
         ['Foreground', 'Background']
 
-        :param layer_name:
-        :param layer_content:
-        :param opacity:
-        :param visible:
-        :param position:
-        :param type:
-        :return:
+        :param layer_name: Name of the layer to add.
+        :param layer_content: Layer content, usually as unsigned 8 bit integers.
+        :param opacity: How transparent the layer should be (opacity is the inverse of transparency).
+        :param visible: Whether the layer should be visible.
+        :param position: Position in the stack of layers. On top = 0, bottom = number of layers.
+        :param type: Layer type. Indexed images should use indexed layers.
+        :return: :py:class:`~pgimp.GimpFile.GimpFile`
         """
         height, width, depth, image_type, layer_type = self._numpy_array_info(layer_content)
         if type is not None:
@@ -327,6 +327,33 @@ class GimpFile:
         return height, width, depth, image_type, layer_type
 
     def add_layer_from_file(self, other_file: 'GimpFile', name: str, new_name: str=None, new_type: GimpFileType=GimpFileType.RGB, new_position: int=0) -> 'GimpFile':
+        """
+        Adds a new layer to the gimp file from another gimp file.
+
+        Example:
+
+        >>> from pgimp.GimpFile import GimpFile, GimpFileType
+        >>> from pgimp.util.TempFile import TempFile
+        >>> import numpy as np
+        >>> with TempFile('.xcf') as other, TempFile('.xcf') as current:  # doctest:+ELLIPSIS
+        ...     green_content = np.zeros(shape=(1, 1, 3), dtype=np.uint8)
+        ...     green_content[:, :] = [0, 255, 0]
+        ...     other_file = GimpFile(other).create('Green', green_content)
+        ...     current_file = GimpFile(current).create('Background', np.zeros(shape=(1, 1, 3)))
+        ...     current_file.add_layer_from_file(other_file, 'Green', new_name='Green (copied)', new_type=GimpFileType.RGB, new_position=1)
+        ...     current_file.layer_names()
+        ...     current_file.layer_to_numpy('Green (copied)')
+        <...>
+        ['Background', 'Green (copied)']
+        array([[[  0, 255,   0]]], dtype=uint8)
+
+        :param other_file: The gimp file from which to copy the layer into the current image.
+        :param name: The layer name in the other file to copy over to the current file. Also the layer name in the current file if no new name is set.
+        :param new_name: The new layer name in the current image. Same as the layer name in the other file if not set.
+        :param new_type: The layer type to create in the current image. E.g. rgb or grayscale.
+        :param new_position: Position in the stack of layers. On top = 0, bottom = number of layers.
+        :return: :py:class:`~pgimp.GimpFile.GimpFile`
+        """
         code = textwrap.dedent(
             """
             import gimp
@@ -355,7 +382,7 @@ class GimpFile:
         self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
         return self
 
-    def merge_layer_from(self, other_file: 'GimpFile', name: str) -> 'GimpFile':
+    def merge_layer_from_file(self, other_file: 'GimpFile', name: str) -> 'GimpFile':
         code = textwrap.dedent(
             """
             import gimp

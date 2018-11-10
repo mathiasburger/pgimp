@@ -75,7 +75,7 @@ def test_numpy_to_layer():
     assert np.all(layer_fg == actual_fg)
 
 
-def test_add_layer_from():
+def test_add_layer_from_file():
     tmp_file = tempfile.mktemp(suffix='.xcf')
     layer_bg = np.array([
         [[255, 255, 255], [0, 0, 0], [255, 255, 255]],
@@ -93,7 +93,7 @@ def test_add_layer_from():
     os.remove(tmp_file)
 
 
-def test_merge_layer_from():
+def test_merge_layer_from_file():
     tmp_file = tempfile.mktemp(suffix='.xcf')
     layer_bg = np.array([
         [[255, 255, 255], [0, 0, 0], [255, 255, 255]],
@@ -102,7 +102,7 @@ def test_merge_layer_from():
 
     gimp_file = GimpFile(tmp_file)
     gimp_file.create('Yellow', layer_bg)
-    gimp_file.merge_layer_from(black_and_yellow_file, 'Yellow')
+    gimp_file.merge_layer_from_file(black_and_yellow_file, 'Yellow')
 
     new_layer_contents = gimp_file.layer_to_numpy('Yellow')
 
