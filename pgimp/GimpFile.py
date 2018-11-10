@@ -403,9 +403,9 @@ class GimpFile:
         ['Green']
         array([[[  0, 255,   0]]], dtype=uint8)
 
-        :param other_file:
-        :param name:
-        :return:
+        :param other_file: The gimp file from which the layer contents are merged into the current file.
+        :param name: Name of the layer to merge.
+        :return: :py:class:`~pgimp.GimpFile.GimpFile`
         """
         code = textwrap.dedent(
             """
@@ -434,7 +434,7 @@ class GimpFile:
     def layers(self) -> List[Layer]:
         """
         Returns the image layers. The topmost layer is the first element, the bottommost the last element.
-        :return:
+        :return: List of :py:class:`~pgimp.layers.Layer`.
         """
         code = textwrap.dedent(
             """
@@ -463,9 +463,19 @@ class GimpFile:
         return layers
 
     def layer_names(self) -> List[str]:
+        """
+        Returns the names of the layers in the gimp file.
+        :return: List of layer names.
+        """
         return list(map(lambda l: l.name, self.layers()))
 
     def remove_layer(self, layer_name: str) -> 'GimpFile':
+        """
+        Removes a layer from the gimp file.
+
+        :param layer_name: Name of the layer to remove.
+        :return: :py:class:`~pgimp.GimpFile.GimpFile`
+        """
         code = textwrap.dedent(
             """
             import gimp
