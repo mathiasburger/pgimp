@@ -41,7 +41,7 @@ class GimpDocumentationGenerator:
     def __init__(self, output: Output) -> None:
         super().__init__()
         self._output = output
-        self._gsr: GimpScriptRunner = GimpScriptRunner()
+        self._gsr = GimpScriptRunner()
 
     def __call__(self):
         self._document_pdb_module()
