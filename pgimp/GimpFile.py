@@ -383,6 +383,30 @@ class GimpFile:
         return self
 
     def merge_layer_from_file(self, other_file: 'GimpFile', name: str) -> 'GimpFile':
+        """
+        Merges a layer from another file into the current file. The layer must exist in the current file.
+
+        Example:
+
+        >>> from pgimp.GimpFile import GimpFile, GimpFileType
+        >>> from pgimp.util.TempFile import TempFile
+        >>> import numpy as np
+        >>> with TempFile('.xcf') as other, TempFile('.xcf') as current:  # doctest:+ELLIPSIS
+        ...     green_content = np.zeros(shape=(1, 1, 3), dtype=np.uint8)
+        ...     green_content[:, :] = [0, 255, 0]
+        ...     other_file = GimpFile(other).create('Green', green_content)
+        ...     current_file = GimpFile(current).create('Green', np.zeros(shape=(1, 1, 3)))
+        ...     current_file.merge_layer_from_file(other_file, 'Green')
+        ...     current_file.layer_names()
+        ...     current_file.layer_to_numpy('Green')
+        <...>
+        ['Green']
+        array([[[  0, 255,   0]]], dtype=uint8)
+
+        :param other_file:
+        :param name:
+        :return:
+        """
         code = textwrap.dedent(
             """
             import gimp
