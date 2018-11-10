@@ -11,5 +11,6 @@ def __exception_hook(exctype, value, traceback):
 
 
 sys.excepthook = __exception_hook
-os.chdir(os.environ['__working_directory__'])
+if '__working_directory__' in os.environ:
+    os.chdir(os.environ['__working_directory__'])
 sys.path.append(os.getcwd())
