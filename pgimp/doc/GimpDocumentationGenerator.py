@@ -102,7 +102,7 @@ class GimpDocumentationGenerator:
                  
             return_json(result)
             """)
-        methods = self._execute(pdb_dump, 10)
+        methods = self._execute(pdb_dump, 20)
         for method in methods.keys():
             blurb = methods[method]['blurb']
             help = methods[method]['help']
@@ -129,7 +129,7 @@ class GimpDocumentationGenerator:
 
             self._output.method(method, description, parameters, return_values)
 
-    def _execute(self, string: str, timeout_in_seconds: int=3):
+    def _execute(self, string: str, timeout_in_seconds: int=10):
         return self._gsr.execute_and_parse_json(string, timeout_in_seconds=timeout_in_seconds)
 
     def _document_gimp_enums(self):
