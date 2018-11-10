@@ -12,8 +12,6 @@ executed within gimp's python interpreter.
 
     API Documentation <apidoc.rst>
 
-    Modules <modules.rst>
-
 Indices and tables
 ==================
 

@@ -143,7 +143,10 @@ class GimpFile:
         ...     gimp_file = GimpFile(f).create_indexed(
         ...         'Background',
         ...         np.arange(0, 256, dtype=np.uint8).reshape((1, 256)),
-        ...         np.array([[255, 0, 0], [0, 255, 0], [0, 0, 255], *[[i, i, i] for i in range(3, 256)]], dtype=np.uint8)
+        ...         np.array(
+        ...             [[255, 0, 0], [0, 255, 0], [0, 0, 255], *[[i, i, i] for i in range(3, 256)]],
+        ...             dtype=np.uint8
+        ...         )
         ...     )
 
         :param layer_name: Name of the layer to create.
@@ -340,7 +343,12 @@ class GimpFile:
         ...     green_content[:, :] = [0, 255, 0]
         ...     other_file = GimpFile(other).create('Green', green_content)
         ...     current_file = GimpFile(current).create('Background', np.zeros(shape=(1, 1, 3)))
-        ...     current_file.add_layer_from_file(other_file, 'Green', new_name='Green (copied)', new_type=GimpFileType.RGB, new_position=1)
+        ...     current_file.add_layer_from_file(
+        ...         other_file,
+        ...         'Green',
+        ...         new_name='Green (copied)',
+        ...         new_type=GimpFileType.RGB, new_position=1
+        ...     )
         ...     current_file.layer_names()
         ...     current_file.layer_to_numpy('Green (copied)')
         <...>

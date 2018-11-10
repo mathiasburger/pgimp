@@ -82,6 +82,7 @@ pygments_style = None
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
+html_style = 'css/my_theme.css'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -91,7 +92,7 @@ html_theme = 'sphinx_rtd_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
+# so a file named "my_theme.css" will overwrite the builtin "my_theme.css".
 html_static_path = ['_static']
 
 # Custom sidebar templates, must be a dictionary that maps document names
@@ -108,7 +109,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'pgimpdoc'
+htmlhelp_basename = pgimp.project + 'doc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -135,8 +136,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'pgimp.tex', 'pgimp Documentation',
-     'Mathias Burger', 'manual'),
+    (master_doc, project + '.tex', project + ' Documentation',
+     author, 'manual'),
 ]
 
 
@@ -145,7 +146,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'pgimp', 'pgimp Documentation',
+    (master_doc, project, project + ' Documentation',
      [author], 1)
 ]
 
@@ -156,8 +157,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'pgimp', 'pgimp Documentation',
-     author, 'pgimp', 'One line description of project.',
+    (master_doc, project, project + ' Documentation',
+     author, project, 'One line description of project.',
      'Miscellaneous'),
 ]
 

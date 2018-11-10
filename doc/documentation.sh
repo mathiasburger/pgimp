@@ -3,5 +3,5 @@
 cdir=$(dirname $(readlink -f $0))
 
 cd $cdir
-sphinx-apidoc -o source/ ../pgimp
+rm -r build/
 make html
