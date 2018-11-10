@@ -29,7 +29,6 @@ On Linux, install the gimp package, e.g. `sudo apt-get install gimp` for Debian/
 ### Mac OS
 
 Install gimp from gimp.org or via homebrew.
-```
 
 ### Windows
 

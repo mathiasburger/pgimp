@@ -12,8 +12,9 @@ setup(name=project,
       author='Mathias Burger',
       author_email='mathias.burger@gmail.com',
       license='MIT',
-      packages=[project],
-      zip_safe=False)
+      packages=[project, 'gimp', 'gimpenums', 'gimpfu'],
+      zip_safe=False
+  )
 
 generate_python_skeleton = GimpDocumentationGenerator(OutputPythonSkeleton(
    file.relative_to(__file__, 'gimp'))
