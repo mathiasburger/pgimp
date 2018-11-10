@@ -55,6 +55,7 @@ class GimpDocumentationGenerator:
         for gimp_class in gimp_classes:
             self._output.start_class(gimp_class)
             attrs = self._execute(
+                'from pgimp.gimp.parameter import return_json\n' +
                 'attrs = filter(lambda s: not s.startswith("__"), dir(gimp.{0:s}))\n'.format(gimp_class) +
                 'props = filter(lambda a: type(eval("gimp.{:s}." + a)).__name__ == "getset_descriptor", attrs)\n'.format(gimp_class) +
                 'methods = filter(lambda a: type(eval("gimp.{:s}." + a)).__name__ == "method_descriptor", attrs)\n'.format(gimp_class) +
@@ -75,6 +76,7 @@ class GimpDocumentationGenerator:
         pdb_dump = textwrap.dedent(
             """        
             from collections import OrderedDict
+            from pgimp.gimp.parameter import return_json
                 
             result = OrderedDict()
             
@@ -136,6 +138,7 @@ class GimpDocumentationGenerator:
         enum_dump = textwrap.dedent(
             """        
             import gimpenums
+            from pgimp.gimp.parameter import return_json
 
             result = filter(lambda s: not s.startswith('__'), dir(gimpenums))
             result = zip(result, map(lambda s: eval('gimpenums.' + s), result))
@@ -150,6 +153,7 @@ class GimpDocumentationGenerator:
         const_dump = textwrap.dedent(
             """        
             import gimpfu
+            from pgimp.gimp.parameter import return_json
 
             result = filter(lambda s: not s.startswith('__') and s.isupper(), dir(gimpfu))
             result = zip(result, map(lambda s: eval('gimpfu.' + s), result))

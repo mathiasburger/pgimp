@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 
 
 def get_parameter(name, default=None):
@@ -37,3 +38,7 @@ def get_bytes(name, default=None):
 
 def get_json(name, default=None):
     return json.loads(get_parameter(name, default))
+
+
+def return_json(obj):
+    json.dump(obj, sys.stdout)

@@ -534,6 +534,7 @@ class GimpFile:
         code = textwrap.dedent(
             """
             from pgimp.gimp.file import open_xcf, save_xcf
+            from pgimp.gimp.parameter import return_json
             
             image = open_xcf('{0:s}')
             
@@ -604,6 +605,8 @@ class GimpFile:
         code = textwrap.dedent(
             """
             from pgimp.gimp.file import open_xcf
+            from pgimp.gimp.parameter import return_json
+            
             image = open_xcf('{0:s}')
             return_json([image.width, image.height])
             """

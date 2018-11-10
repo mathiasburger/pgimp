@@ -141,7 +141,9 @@ class GimpScriptRunner:
         Example:
 
         >>> from pgimp.GimpScriptRunner import GimpScriptRunner
-        >>> GimpScriptRunner().execute_and_parse_json('return_json({"a": "b", "c": [1, 2]})')['c']
+        >>> GimpScriptRunner().execute_and_parse_json(
+        ...     'from pgimp.gimp.parameter import return_json; return_json({"a": "b", "c": [1, 2]})'
+        ... )['c']
         [1, 2]
 
         See also :py:meth:`~pgimp.GimpScriptRunner.GimpScriptRunner.execute`.

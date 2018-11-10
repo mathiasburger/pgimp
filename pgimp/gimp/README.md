@@ -25,6 +25,8 @@ int_value = get_int('parameter')
 Json can be returned as follows:
 
 ```
+from pgimp.gimp.parameter import return_json;
+
 return_json(obj)
 ```
 
