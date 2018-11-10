@@ -7,6 +7,8 @@ Contains code that is executed within gimp.
 Parameters are passed to scripts using environment variables and can be retreived as follows:
 
 ```
+from pgimp.gimp.parameter import get_parameter
+
 get_parameter('parameter')
 ```
 

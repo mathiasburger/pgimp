@@ -124,7 +124,7 @@ class GimpScriptRunner:
         parameters = parameters or {}
         try:
             result = self.execute(
-                'exec(open(get_parameter("__script_file__")).read(), globals())',
+                'from pgimp.gimp.parameter import get_parameter; exec(open(get_parameter("__script_file__")).read(), globals())',
                 {**parameters, '__script_file__': file},
                 timeout_in_seconds,
                 output_stream=output_stream,

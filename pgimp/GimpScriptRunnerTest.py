@@ -13,7 +13,7 @@ gsr = GimpScriptRunner()
 
 def test_execute_file():
     tmpfile = mktemp()
-    file.append(tmpfile, 'print(get_parameter("parameter"))')
+    file.append(tmpfile, 'from pgimp.gimp.parameter import get_parameter; print(get_parameter("parameter"))')
     out = gsr.execute_file(tmpfile, parameters={'parameter': 'value'}, timeout_in_seconds=1)
 
     os.remove(tmpfile)
@@ -23,7 +23,7 @@ def test_execute_file():
 
 def test_execute_file_with_runtime_exception():
     tmpfile = mktemp(suffix='.py')
-    file.append(tmpfile, 'print(get_parameter("parameter"))\nprint(1/0)')
+    file.append(tmpfile, 'from pgimp.gimp.parameter import get_parameter; print(get_parameter("parameter"))\nprint(1/0)')
 
     with pytest.raises(GimpScriptException) as exception:
         gsr.execute_file(tmpfile, parameters={'parameter': 'value'}, timeout_in_seconds=1)
@@ -48,7 +48,7 @@ def test_runtime_exception():
 
 
 def test_pass_parameter():
-    result = gsr.execute('print(get_parameter("parameter"))',
+    result = gsr.execute('from pgimp.gimp.parameter import get_parameter; print(get_parameter("parameter"))',
                          parameters={'parameter': 'value'}, timeout_in_seconds=1)
 
     assert 'value\n' == result

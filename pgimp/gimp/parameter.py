@@ -1,5 +1,11 @@
 import json
-from pgimp.gimp.initializer import get_parameter
+import os
+
+
+def get_parameter(name, default=None):
+    if default is not None and name not in os.environ:
+        return default
+    return os.environ[name]
 
 
 def get_bool(name, default=None):

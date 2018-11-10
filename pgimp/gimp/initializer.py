@@ -1,6 +1,7 @@
-import sys
-import os
 import json
+import os
+import sys
+
 import gimp
 
 
@@ -13,12 +14,6 @@ def __exception_hook(exctype, value, traceback):
 sys.excepthook = __exception_hook
 os.chdir(os.environ['__working_directory__'])
 sys.path.append(os.getcwd())
-
-
-def get_parameter(name, default=None):
-    if default is not None and name not in os.environ:
-        return default
-    return os.environ[name]
 
 
 def return_json(obj):
