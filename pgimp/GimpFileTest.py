@@ -184,3 +184,14 @@ def test_remove_layer():
     assert ['Layer', 'Background'] == all_layers
     assert ['Layer'] == remaining_layers1
     assert [] == remaining_layers2
+
+
+def test_copy():
+    from pgimp.GimpFile import GimpFile
+    from pgimp.util.TempFile import TempFile
+    with TempFile('.xcf') as original, TempFile('.xcf') as copy:
+        original_file = GimpFile(original).create('Background', np.zeros(shape=(2, 2), dtype=np.uint8))
+        copied_file = original_file.copy(copy)
+        original_file.add_layer_from_numpy('New', np.zeros(shape=(2, 2), dtype=np.uint8))
+        assert ['Background'] == copied_file.layer_names()
+        assert ['New', 'Background'] == original_file.layer_names()

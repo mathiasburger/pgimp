@@ -10,6 +10,7 @@ import numpy as np
 from pgimp.GimpException import GimpException
 from pgimp.GimpScriptRunner import GimpScriptRunner
 from pgimp.layers.Layer import Layer
+from pgimp.util import file
 from pgimp.util.string import escape_single_quotes
 
 
@@ -200,6 +201,25 @@ class GimpFile:
 
         os.remove(tmpfile)
         return self
+
+    def copy(self, filename: str):
+        """
+        Copies a gimp file.
+
+        Example:
+        >>> from pgimp.GimpFile import GimpFile
+        >>> from pgimp.util.TempFile import TempFile
+        >>> with TempFile('.xcf') as original, TempFile('.xcf') as copy:
+        ...     original_file = GimpFile(original).create('Background', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     copied_file = original_file.copy(copy)
+        ...     copied_file.layer_names()
+        ['Background']
+
+        :param filename: Destination filename relative to the source filename. Or an absolute path.
+        :return: The copied exemplar of :py:class:`~pgimp.GimpFile.GimpFile`.
+        """
+        dst = file.copy_relative(self._file, filename)
+        return GimpFile(dst)
 
     def layer_to_numpy(self, layer_name: str) -> np.ndarray:
         """
