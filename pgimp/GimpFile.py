@@ -3,7 +3,7 @@ import os
 import tempfile
 import textwrap
 from enum import Enum
-from typing import List, Union
+from typing import List, Union, Tuple
 
 import numpy as np
 
@@ -202,7 +202,41 @@ class GimpFile:
         os.remove(tmpfile)
         return self
 
-    def copy(self, filename: str):
+    def create_from_template(self, other_file: 'GimpFile') -> 'GimpFile':
+        """
+        Create a new gimp file without any layers from a template containing the dimensions (width, height)
+        and the image type.
+
+        Example:
+
+        >>> from pgimp.GimpFile import GimpFile
+        >>> from pgimp.util.TempFile import TempFile
+        >>> with TempFile('.xcf') as original, TempFile('.xcf') as created:
+        ...     original_file = GimpFile(original).create('Background', np.zeros(shape=(3, 2), dtype=np.uint8))
+        ...     created_file = GimpFile(created).create_from_template(original_file)
+        ...     created_file.layer_names()
+        []
+
+        :param other_file: The template file.
+        :return: The newly created :py:class:`~pgimp.GimpFile.GimpFile`.
+        """
+        code = textwrap.dedent(
+            """
+            import gimp
+            from pgimp.gimp.file import open_xcf, save_xcf
+            image = open_xcf('{0:s}')
+            width = image.width
+            height = image.height
+            type = image.base_type
+            image = gimp.pdb.gimp_image_new(width, height, type)
+            save_xcf(image, '{1:s}')
+            """
+        ).format(escape_single_quotes(other_file._file), escape_single_quotes(self._file))
+
+        self._gsr.execute(code, timeout_in_seconds=self._short_running_timeout_in_seconds)
+        return self
+
+    def copy(self, filename: str) -> 'GimpFile':
         """
         Copies a gimp file.
 
@@ -518,3 +552,29 @@ class GimpFile:
 
         self._gsr.execute(code, timeout_in_seconds=self._short_running_timeout_in_seconds)
         return self
+
+    def dimensions(self) -> Tuple[int, int]:
+        """
+        Return the image dimensions (width, height).
+
+        Example:
+
+        >>> from pgimp.GimpFile import GimpFile
+        >>> from pgimp.util.TempFile import TempFile
+        >>> with TempFile('.xcf') as f:
+        ...     gimp_file = GimpFile(f).create('Background', np.zeros(shape=(3, 2), dtype=np.uint8))
+        ...     gimp_file.dimensions()
+        (2, 3)
+
+        :return: Tuple of width and height.
+        """
+        code = textwrap.dedent(
+            """
+            from pgimp.gimp.file import open_xcf
+            image = open_xcf('{0:s}')
+            return_json([image.width, image.height])
+            """
+        ).format(escape_single_quotes(self._file))
+
+        dimensions = self._gsr.execute_and_parse_json(code, timeout_in_seconds=self._short_running_timeout_in_seconds)
+        return tuple(dimensions)

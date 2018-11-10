@@ -9,4 +9,3 @@
 * document that numpy arrays are y,x indexed
 * find out if certain blocks of text can be copied between docblocks using sphinx functionality
   and use it to add notes about numpy uint8 and row-major order (yx instead of xy)
-* add create_like which reads out dimensions of another image and creates the current image by those dims

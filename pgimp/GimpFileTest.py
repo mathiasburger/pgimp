@@ -1,14 +1,12 @@
 import os
 import tempfile
-import textwrap
 
 import numpy as np
 from pytest import approx
 
 from pgimp.GimpFile import GimpFile, LayerType, ColorMap
-from pgimp.GimpScriptRunner import GimpScriptRunner
 from pgimp.util import file
-
+from pgimp.util.TempFile import TempFile
 
 rgb_file = GimpFile(file.relative_to(__file__, 'test-resources/rgb.xcf'))
 """
@@ -187,11 +185,21 @@ def test_remove_layer():
 
 
 def test_copy():
-    from pgimp.GimpFile import GimpFile
-    from pgimp.util.TempFile import TempFile
     with TempFile('.xcf') as original, TempFile('.xcf') as copy:
         original_file = GimpFile(original).create('Background', np.zeros(shape=(2, 2), dtype=np.uint8))
         copied_file = original_file.copy(copy)
         original_file.add_layer_from_numpy('New', np.zeros(shape=(2, 2), dtype=np.uint8))
         assert ['Background'] == copied_file.layer_names()
         assert ['New', 'Background'] == original_file.layer_names()
+
+
+def test_dimensions():
+    assert (3, 2) == rgb_file.dimensions()
+
+
+def test_create_from_template():
+    with TempFile('.xcf') as original, TempFile('.xcf') as created:
+        original_file = GimpFile(original).create('Background', np.zeros(shape=(3, 2), dtype=np.uint8))
+        created_file = GimpFile(created).create_from_template(original_file)
+        assert [] == created_file.layer_names()
+        assert (2, 3) == created_file.dimensions()
