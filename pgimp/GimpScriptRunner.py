@@ -296,7 +296,7 @@ class GimpScriptRunner:
         if stderr_content:
             error_lines = stderr_content.strip().split('\n')
             if error_lines[-1].startswith('__GIMP_SCRIPT_ERROR__'):
-                error_string: str = stderr_content.rsplit('\n', 1)[0] + '\n'
+                error_string = stderr_content.rsplit('\n', 1)[0] + '\n'
                 if self._file_to_execute:
                     error_string = error_string.replace('File "<string>"', 'File "{:s}"'.format(self._file_to_execute), 1)
                 raise GimpScriptException(error_string)
