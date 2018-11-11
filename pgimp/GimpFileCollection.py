@@ -1,12 +1,12 @@
 import os
 import textwrap
 from glob import glob
-from typing import List, Callable
+from typing import List, Callable, Union, Dict
 
 from gimp.Layer import Layer
 from pgimp.GimpException import GimpException
 from pgimp.GimpFile import EXTENSION, GimpFile
-from pgimp.GimpScriptRunner import GimpScriptRunner
+from pgimp.GimpScriptRunner import GimpScriptRunner, JsonType
 from pgimp.util.string import escape_single_quotes
 
 
@@ -123,9 +123,9 @@ class GimpFileCollection:
         but you need to make sure that memory is cleaned up between opening files, e.g. by invoking
         **gimp_image_delete(image)**.
 
-        :param script_predicate:
-        :param timeout_in_seconds:
-        :return:
+        :param script_predicate: Script to be executed.
+        :param timeout_in_seconds: Script execution timeout in seconds.
+        :return: List of files matching the criteria.
         """
         if "open_xcf('__file__')" in script_predicate and "return_bool(" in script_predicate:
             return list(filter(lambda file: self._gsr.execute_and_parse_bool(
@@ -142,6 +142,44 @@ class GimpFileCollection:
             raise GimpMissingRequiredParameterException(
                 'Either an image file must be opened with open_xcf(\'__file__\') ' +
                 'and the result is returned with return_bool() ' +
+                'or a list of files must be retrieved by get_json(\'__files__\') ' +
+                'and the result is returned with return_json().'
+            )
+
+    def execute_script_and_return_json(self, script: str, timeout_in_seconds: float=None) -> Union[JsonType, Dict[str, JsonType]]:
+        """
+        Execute a gimp script on the collection.
+
+        If the script opens a file with **open_xcf('__file__')**, then the script is executed for each file
+        and a result returned by **return_json(value)** is expected. The results will be returned as a
+        dictionary containing the filenames as keys and the results as values.
+
+        If the script retrieves the whole list of files with **get_json('__files__')**, then the script is
+        only executed once and passed the whole list of files as a parameter. A result returned by
+        **return_json(value)** is expected. This solution has better performance
+        but you need to make sure that memory is cleaned up between opening files, e.g. by invoking
+        **gimp_image_delete(image)**.
+
+        :param script: Script to be executed on the files.
+        :param timeout_in_seconds:  Script execution timeout in seconds.
+        :return: Dictionary of filenames and results if the script reads a single file.
+                 Json if the script takes the whole list of files.
+        """
+        if "open_xcf('__file__')" in script and "return_json(" in script:
+            return {file: self._gsr.execute_and_parse_json(
+                script.replace('__file__', escape_single_quotes(file)),
+                timeout_in_seconds=timeout_in_seconds
+            ) for file in self._files}
+        elif "get_json('__files__')" in script and "return_json(" in script:
+            return self._gsr.execute_and_parse_json(
+                script,
+                parameters={'__files__': self._files},
+                timeout_in_seconds=timeout_in_seconds
+            )
+        else:
+            raise GimpMissingRequiredParameterException(
+                'Either an image file must be opened with open_xcf(\'__file__\') ' +
+                'and the result is returned with return_json() ' +
                 'or a list of files must be retrieved by get_json(\'__files__\') ' +
                 'and the result is returned with return_json().'
             )

@@ -223,3 +223,69 @@ def test_find_files_by_script_without_required_parameters():
 
     with pytest.raises(GimpMissingRequiredParameterException):
         collection.find_files_by_script(script, timeout_in_seconds=3)
+
+
+def test_execute_script_and_return_json_with_script_that_takes_single_file():
+    with TempFile('.xcf') as with_white, TempFile('.xcf') as without_white:
+        GimpFile(with_white)\
+            .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8))\
+            .add_layer_from_numpy('White', np.ones(shape=(1, 1)))
+
+        GimpFile(without_white) \
+            .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8)) \
+            .add_layer_from_numpy('Black', np.zeros(shape=(1, 1)))
+
+        collection = GimpFileCollection([with_white, without_white])
+
+        script = textwrap.dedent(
+            """
+            from pgimp.gimp.file import open_xcf
+            from pgimp.gimp.parameter import return_json
+            image = open_xcf('__file__')
+            for layer in image.layers:
+                if layer.name == '{0:s}':
+                    return_json(True)
+            return_json(False)
+            """
+        )
+
+        files = collection.execute_script_and_return_json(script.format(escape_single_quotes('White')), timeout_in_seconds=3)
+        assert {
+                    with_white: True,
+                    without_white: False,
+               } == files
+
+
+def test_execute_script_and_return_json_with_script_that_takes_multiple_files():
+    with TempFile('.xcf') as with_white, TempFile('.xcf') as without_white:
+        GimpFile(with_white)\
+            .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8))\
+            .add_layer_from_numpy('White', np.ones(shape=(1, 1)))
+
+        GimpFile(without_white) \
+            .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8)) \
+            .add_layer_from_numpy('Black', np.zeros(shape=(1, 1)))
+
+        collection = GimpFileCollection([with_white, without_white])
+
+        script = textwrap.dedent(
+            """
+            import gimp
+            from pgimp.gimp.file import open_xcf
+            from pgimp.gimp.parameter import return_json, get_json
+            files = get_json('__files__')
+            matches = []
+            for file in files:
+                image = open_xcf(file)
+                for layer in image.layers:
+                    if layer.name == '{0:s}':
+                        matches.append(file)
+                gimp.pdb.gimp_image_delete(image)
+            return_json(matches)
+            """
+        )
+
+        files = collection.execute_script_and_return_json(script.format(escape_single_quotes('White')), timeout_in_seconds=3)
+        assert len(files) == 1
+        assert with_white == files[0]
+

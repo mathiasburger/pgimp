@@ -2,9 +2,5 @@
 * add contributors file like https://github.com/parrt/sample-jetbrains-plugin/blob/master/contributors.txt
 * write tutorial
 * GimpFileCollection
-** find files having
-*** Layers by name or pattern
-*** Filename or pattern
 ** Add or merge layers using another collection
 ** add examples to documentation
-** execute script for all files and return json 
