@@ -2,6 +2,8 @@ import json
 import os
 import sys
 
+import gimp
+
 
 def get_parameter(name, default=None):
     if default is not None and name not in os.environ:
@@ -42,3 +44,9 @@ def get_json(name, default=None):
 
 def return_json(obj):
     json.dump(obj, sys.stdout)
+    gimp.pdb.gimp_quit(0)
+
+
+def return_bool(bool):
+    print('true' if bool else 'false')
+    gimp.pdb.gimp_quit(0)

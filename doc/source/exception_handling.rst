@@ -35,3 +35,8 @@ Exception Handling
     :members:
     :undoc-members:
     :show-inheritance:
+
+.. autoclass:: pgimp.GimpFileCollection.GimpMissingRequiredParameterException
+    :members:
+    :undoc-members:
+    :show-inheritance:

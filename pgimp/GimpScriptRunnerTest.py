@@ -65,6 +65,14 @@ def test_execute_and_parse_json():
     assert ["a", "b", "c"] == result
 
 
+def test_execute_and_parse_bool():
+    result = gsr.execute_and_parse_json('from pgimp.gimp.parameter import return_bool; return_bool("truthy")', timeout_in_seconds=3)
+    assert result is True
+
+    result = gsr.execute_and_parse_json('from pgimp.gimp.parameter import return_bool; return_bool("")', timeout_in_seconds=3)
+    assert result is False
+
+
 def test_import_from_pgimp_library():
     gimp_file = file.relative_to(__file__, 'test-resources/rgb.xcf')
     out = gsr.execute('from pgimp.gimp.file import *\nimage = open_xcf(\'{:s}\')\nprint(image.layers[0].name)'.format(gimp_file), timeout_in_seconds=3)

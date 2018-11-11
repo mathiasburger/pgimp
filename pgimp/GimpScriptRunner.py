@@ -156,6 +156,28 @@ class GimpScriptRunner:
         )
         return self._parse(result)
 
+    def execute_and_parse_bool(self, string: str, parameters: dict=None, timeout_in_seconds: float=None, error_stream: FileIO = None) -> bool:
+        """
+        Execute a given piece of code within gimp's python interpreter and decode the result to bool.
+
+        Example:
+
+        >>> from pgimp.GimpScriptRunner import GimpScriptRunner
+        >>> GimpScriptRunner().execute_and_parse_bool(
+        ...     'from pgimp.gimp.parameter import return_bool; return_bool("truthy")'
+        ... )
+        True
+
+        See also :py:meth:`~pgimp.GimpScriptRunner.GimpScriptRunner.execute`.
+        """
+        result = self.execute(
+            string,
+            parameters=parameters,
+            timeout_in_seconds=timeout_in_seconds,
+            error_stream=error_stream
+        )
+        return self._parse(result)
+
     def execute_binary(self, string: str, parameters: dict=None, timeout_in_seconds: float=None, error_stream: FileIO = None) -> bytes:
         """
         Execute a given piece of code within gimp's python interpreter and decode the result to bytes.

@@ -1,21 +1,36 @@
 import os
 from glob import glob
-from typing import List
+from typing import List, Callable
 
+from gimp.Layer import Layer
 from pgimp.GimpException import GimpException
-from pgimp.GimpFile import EXTENSION
+from pgimp.GimpFile import EXTENSION, GimpFile
+from pgimp.GimpScriptRunner import GimpScriptRunner
+from pgimp.util.string import escape_single_quotes
 
 
 class NonExistingPathComponentException(GimpException):
+    """
+    Indicates that a path should have had a specific component, e.g. prefix or suffix.
+    """
+    pass
+
+
+class GimpMissingRequiredParameterException(GimpException):
+    """
+    Indicates that a parameter that is necessary for a gimp script is missing.
+    """
     pass
 
 
 class GimpFileCollection:
-    def __init__(self, files: List[str]) -> None:
+    def __init__(self, files: List[str], gimp_file_factory=lambda file: GimpFile(file)) -> None:
         super().__init__()
         self._files = files
+        self._gimp_file_factory = gimp_file_factory
+        self._gsr = GimpScriptRunner()
 
-    def files(self):
+    def get_files(self):
         return self._files
 
     def replace_prefix(self, prefix: str, new_prefix: str='') -> 'GimpFileCollection':
@@ -59,6 +74,32 @@ class GimpFileCollection:
         if suffix_length > 0:
             files = map(lambda file: file[:-suffix_length] + new_suffix, files)
         return GimpFileCollection(list(files))
+
+    def find_files_containing_layer_by_predictate(self, predicate: Callable[[List[Layer]], bool]) -> List[str]:
+        return list(filter(lambda file: predicate(self._gimp_file_factory(file).layers()), self._files))
+
+    def find_files_containing_layer_by_name(self, layer_name: str):
+        return self.find_files_containing_layer_by_predictate(
+            lambda layers: layer_name in map(lambda layer: layer.name, layers)
+        )
+
+    def find_files_by_script(self, script_predicate: str, timeout_in_seconds: float=None) -> List[str]:
+        if "open_xcf('__file__')" in script_predicate:
+            return list(filter(lambda file: self._gsr.execute_and_parse_bool(
+                script_predicate.replace('__file__', escape_single_quotes(file)),
+                timeout_in_seconds=timeout_in_seconds
+            ), self._files))
+        elif "get_json('__files__')" in script_predicate:
+            return self._gsr.execute_and_parse_json(
+                script_predicate,
+                parameters={'__files__': self._files},
+                timeout_in_seconds=timeout_in_seconds
+            )
+        else:
+            raise GimpMissingRequiredParameterException(
+                'Either an image file must be opened with open_xcf(\'__file__\') ' +
+                'or a list of files must be retrieved by get_json(\'__files__\').'
+            )
 
     @classmethod
     def create_from_pathname(cls, pathname: str):
