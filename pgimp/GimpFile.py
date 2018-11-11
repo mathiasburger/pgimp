@@ -284,6 +284,7 @@ class GimpFile:
         Copies a gimp file.
 
         Example:
+
         >>> from pgimp.GimpFile import GimpFile
         >>> from pgimp.util.TempFile import TempFile
         >>> with TempFile('.xcf') as original, TempFile('.xcf') as copy:
@@ -571,6 +572,7 @@ class GimpFile:
     def layer_names(self) -> List[str]:
         """
         Returns the names of the layers in the gimp file.
+
         :return: List of layer names.
         """
         return list(map(lambda l: l.name, self.layers()))

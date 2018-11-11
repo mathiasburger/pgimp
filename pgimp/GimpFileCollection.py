@@ -3,10 +3,10 @@ import textwrap
 from glob import glob
 from typing import List, Callable, Union, Dict
 
-from gimp.Layer import Layer
 from pgimp.GimpException import GimpException
 from pgimp.GimpFile import EXTENSION, GimpFile
 from pgimp.GimpScriptRunner import GimpScriptRunner, JsonType
+from pgimp.layers.Layer import Layer
 from pgimp.util.string import escape_single_quotes
 
 
@@ -67,7 +67,7 @@ class GimpFileCollection:
 
         :param prefix: The prefix to strip away.
         :param new_prefix: The replacement value for the prefix.
-        :return: A :py:class:`~pgimp.GimpFileCollection.GimpFileCollection' where file prefixes are stripped away.
+        :return: A :py:class:`~pgimp.GimpFileCollection.GimpFileCollection` where file prefixes are stripped away.
         """
         return self.replace_path_components(prefix=prefix, new_prefix=new_prefix)
 
@@ -77,7 +77,7 @@ class GimpFileCollection:
 
         :param suffix: The suffix to strip away.
         :param new_suffix: The replacement value for the suffix.
-        :return: A :py:class:`~pgimp.GimpFileCollection.GimpFileCollection' where file suffixed are stripped away.
+        :return: A :py:class:`~pgimp.GimpFileCollection.GimpFileCollection` where file suffixed are stripped away.
         """
         return self.replace_path_components(suffix=suffix, new_suffix=new_suffix)
 
@@ -89,7 +89,7 @@ class GimpFileCollection:
         :param suffix: The suffix to replace.
         :param new_prefix: The replacement value for the prefix.
         :param new_suffix: The replacement value for the suffix.
-        :return: A :py:class:`~pgimp.GimpFileCollection.GimpFileCollection' where the given path components
+        :return: A :py:class:`~pgimp.GimpFileCollection.GimpFileCollection` where the given path components
                  are replaced.
         """
         files = self._files
@@ -245,7 +245,7 @@ class GimpFileCollection:
             prefix_in_other_collection = get_string('prefix_in_other_collection')
             prefix_in_this_collection = get_string('prefix_in_this_collection')
             layer_name = get_string('layer_name')
-            layer_position = get_string('layer_position')
+            layer_position = get_int('layer_position')
             files = get_json('__files__')
             
             for file in files:
@@ -283,7 +283,7 @@ class GimpFileCollection:
         :param pathname: Can be a file with or without .xcf suffix, directory or recursive directory search.
                          Allowed wildcards include '*' for matching zero or more characters
                          and '**' for recursive search.
-        :return: A :py:class:`~pgimp.GimpFileCollection.GimpFileCollection' that contains an ordered list of filenames.
+        :return: A :py:class:`~pgimp.GimpFileCollection.GimpFileCollection` that contains an ordered list of filenames.
         """
         if pathname.endswith('**') or pathname.endswith('**/'):
             pathname = os.path.join(pathname, '*' + EXTENSION)

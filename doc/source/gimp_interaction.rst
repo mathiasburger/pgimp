@@ -1,17 +1,8 @@
 Interacting with Gimp
 ---------------------
 
-.. autoclass:: pgimp.GimpScriptRunner.GimpScriptRunner
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. toctree::
+   :maxdepth: 2
 
-.. autoclass:: pgimp.GimpFile.GimpFile
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. autoclass:: pgimp.GimpFile.GimpFileCollection
-    :members:
-    :undoc-members:
-    :show-inheritance:
+    Running Scripts <script_runner.rst>
+    Gimp Files <gimp_files.rst>
