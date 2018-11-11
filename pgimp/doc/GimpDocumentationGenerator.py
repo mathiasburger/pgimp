@@ -45,6 +45,7 @@ class GimpDocumentationGenerator:
 
     def __call__(self):
         self._document_pdb_module()
+        self._output.start_classes()
         self._document_known_gimp_classes()
         self._document_unknown_gimp_classes()
         self._document_gimp_enums()

@@ -72,9 +72,16 @@ class OutputPythonSkeleton(Output):
 
         self._append(result)
 
+    def start_classes(self):
+        output_dir_bak = self._output_dir
+        self._output_dir = os.path.join(os.path.dirname(self._output_dir), 'gimp')
+        self._add_file('__init__')
+        self._output_dir = output_dir_bak
+
+        self._append("__all__ = ['pdb']\n")
+
     def start_class(self, name: str):
-        self._add_file(name)
-        self._append('class {:s}:'.format(name))
+        self._append('\n\nclass {:s}:'.format(name))
 
     def class_properties(self, properties: List[str]):
         for property in properties:
@@ -89,8 +96,7 @@ class OutputPythonSkeleton(Output):
         self._append('\n')
 
     def start_unknown_class(self, name: str):
-        self._add_file(name)
-        self._append('class {:s}:\n    pass\n'.format(name))
+        self._append('\n\nclass {:s}:\n    pass\n'.format(name))
 
     def gimpenums(self, constants: Tuple[str, Any]):
         output_dir_bak = self._output_dir

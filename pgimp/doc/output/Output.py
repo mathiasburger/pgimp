@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from typing import Dict, Tuple, MutableMapping, Union, List, Any
+from typing import Tuple, MutableMapping, Union, List, Any
 
 
 class Output(ABC):
@@ -16,6 +16,10 @@ class Output(ABC):
         parameters: Union[MutableMapping[str, Tuple[str, str]], OrderedDict],
         return_values: Union[MutableMapping[str, Tuple[str, str]], OrderedDict],
     ):
+        pass
+
+    @abstractmethod
+    def start_classes(self):
         pass
 
     @abstractmethod
