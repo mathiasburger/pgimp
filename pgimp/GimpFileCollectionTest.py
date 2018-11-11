@@ -12,48 +12,67 @@ from pgimp.util.string import escape_single_quotes
 
 
 def test_create_from_pathname_with_file():
+    prefix = file.relative_to(__file__, 'test-resources/files/')
+
     collection = GimpFileCollection.create_from_pathname(file.relative_to(__file__, 'test-resources/files/first'))
     assert len(collection.get_files()) == 1
+    assert prefix == collection.get_prefix()
 
     collection = GimpFileCollection.create_from_pathname(file.relative_to(__file__, 'test-resources/files/first.xcf'))
     assert len(collection.get_files()) == 1
+    assert prefix == collection.get_prefix()
 
     collection = GimpFileCollection.create_from_pathname(file.relative_to(__file__, 'test-resources/files/first.png'))
     assert len(collection.get_files()) == 0
+    assert '' == collection.get_prefix()
 
 
 def test_create_from_pathname_with_directory():
+    prefix = file.relative_to(__file__, 'test-resources/files/')
+
     collection = GimpFileCollection.create_from_pathname(file.relative_to(__file__, 'test-resources/files'))
     assert len(collection.get_files()) == 2
+    assert prefix == collection.get_prefix()
 
     collection = GimpFileCollection.create_from_pathname(file.relative_to(__file__, 'test-resources/files/'))
     assert len(collection.get_files()) == 2
+    assert prefix == collection.get_prefix()
 
     collection = GimpFileCollection.create_from_pathname(file.relative_to(__file__, 'test-resources/files/*'))
     assert len(collection.get_files()) == 2
+    assert prefix == collection.get_prefix()
 
     collection = GimpFileCollection.create_from_pathname(file.relative_to(__file__, 'test-resources/files/*.xcf'))
     assert len(collection.get_files()) == 2
+    assert prefix == collection.get_prefix()
 
     collection = GimpFileCollection.create_from_pathname(file.relative_to(__file__, 'test-resources/files/*.png'))
     assert len(collection.get_files()) == 0
+    assert '' == collection.get_prefix()
 
 
 def test_create_from_pathname_with_recursive_match():
+    prefix = file.relative_to(__file__, 'test-resources/files/')
+
     collection = GimpFileCollection.create_from_pathname(file.relative_to(__file__, 'test-resources/files/**'))
     assert len(collection.get_files()) == 4
+    assert prefix == collection.get_prefix()
 
     collection = GimpFileCollection.create_from_pathname(file.relative_to(__file__, 'test-resources/files/**/'))
     assert len(collection.get_files()) == 4
+    assert prefix == collection.get_prefix()
 
     collection = GimpFileCollection.create_from_pathname(file.relative_to(__file__, 'test-resources/files/**/*'))
     assert len(collection.get_files()) == 4
+    assert prefix == collection.get_prefix()
 
     collection = GimpFileCollection.create_from_pathname(file.relative_to(__file__, 'test-resources/files/**/*.xcf'))
     assert len(collection.get_files()) == 4
+    assert prefix == collection.get_prefix()
 
     collection = GimpFileCollection.create_from_pathname(file.relative_to(__file__, 'test-resources/files/**/*.png'))
     assert len(collection.get_files()) == 0
+    assert '' == collection.get_prefix()
 
 
 def test_ordering():

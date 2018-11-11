@@ -31,8 +31,23 @@ class GimpFileCollection:
         self._gimp_file_factory = gimp_file_factory
         self._gsr = GimpScriptRunner()
 
-    def get_files(self):
+    def get_files(self) -> List[str]:
+        """
+        Returns the list of files contained in the collection.
+
+        :return: List of files contained in the collection
+        """
         return self._files
+
+    def get_prefix(self) -> str:
+        """
+        Returns the common path prefix for all files including a trailing slash.
+
+        :return: Common path prefix for all files including a trailing slash.
+        """
+        if len(self._files) == 1:
+            return os.path.dirname(self._files[0]) + '/'
+        return os.path.commonprefix(self._files)
 
     def replace_prefix(self, prefix: str, new_prefix: str='') -> 'GimpFileCollection':
         """
