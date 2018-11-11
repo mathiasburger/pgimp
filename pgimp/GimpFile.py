@@ -66,6 +66,14 @@ class GimpFile:
         self._layer_conversion_timeout_in_seconds = 20
         self._short_running_timeout_in_seconds = 10
 
+    def get_file(self):
+        """
+        Returns the filename.
+
+        :return: Filename.
+        """
+        return self._file
+
     def create(self, layer_name: str, layer_content: np.ndarray) -> 'GimpFile':
         """
         Create a new gimp image with one layer from a numpy array.

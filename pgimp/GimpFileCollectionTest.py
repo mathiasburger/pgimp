@@ -1,3 +1,5 @@
+import os
+import tempfile
 import textwrap
 
 import numpy as np
@@ -308,3 +310,29 @@ def test_execute_script_and_return_json_with_script_that_takes_multiple_files():
         assert len(files) == 1
         assert with_white == files[0]
 
+
+def test_copy_layer_from():
+    with tempfile.TemporaryDirectory('_src') as srcdir, tempfile.TemporaryDirectory('_dst') as dstdir:
+        src_1 = GimpFile(os.path.join(srcdir, 'file1.xcf'))\
+            .create('Background', np.zeros(shape=(1, 1)))\
+            .add_layer_from_numpy('White', np.ones(shape=(1, 1), dtype=np.uint8))
+        src_2 = GimpFile(os.path.join(srcdir, 'file2.xcf'))\
+            .create('Background', np.zeros(shape=(1, 1))) \
+            .add_layer_from_numpy('White', np.ones(shape=(1, 1), dtype=np.uint8))
+
+        dst_1 = GimpFile(os.path.join(dstdir, 'file1.xcf')) \
+            .create('Background', np.zeros(shape=(1, 1))) \
+            .add_layer_from_numpy('White', np.zeros(shape=(1, 1), dtype=np.uint8))
+        dst_2 = GimpFile(os.path.join(dstdir, 'file2.xcf')) \
+            .create('Background', np.zeros(shape=(1, 1)))
+
+        src_collection = GimpFileCollection([src_1.get_file(), src_2.get_file()])
+        dst_collection = GimpFileCollection([dst_1.get_file(), dst_2.get_file()])
+
+        dst_collection.copy_layer_from(src_collection, 'White', layer_position=1, timeout_in_seconds=10)
+
+        assert np.all(dst_1.layer_to_numpy('White') == 1)
+        assert ['Background', 'White'] == dst_1.layer_names()
+        assert 'White' in dst_2.layer_names()
+        assert np.all(dst_2.layer_to_numpy('White') == 1)
+        assert ['Background', 'White'] == dst_2.layer_names()

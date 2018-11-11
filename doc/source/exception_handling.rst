@@ -40,3 +40,8 @@ Exception Handling
     :members:
     :undoc-members:
     :show-inheritance:
+
+.. autoclass:: pgimp.GimpFileCollection.MissingFilesException
+    :members:
+    :undoc-members:
+    :show-inheritance:

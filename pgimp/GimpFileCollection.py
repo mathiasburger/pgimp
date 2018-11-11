@@ -24,6 +24,13 @@ class GimpMissingRequiredParameterException(GimpException):
     pass
 
 
+class MissingFilesException(GimpException):
+    """
+    Indicates that files are missing.
+    """
+    pass
+
+
 class GimpFileCollection:
     def __init__(self, files: List[str], gimp_file_factory=lambda file: GimpFile(file)) -> None:
         super().__init__()
@@ -45,9 +52,14 @@ class GimpFileCollection:
 
         :return: Common path prefix for all files including a trailing slash.
         """
+        if len(self._files) == 0:
+            return ''
         if len(self._files) == 1:
             return os.path.dirname(self._files[0]) + '/'
-        return os.path.commonprefix(self._files)
+        commonprefix = os.path.commonprefix(self._files)
+        if os.path.isdir(commonprefix):
+            return commonprefix
+        return os.path.dirname(commonprefix) + '/'
 
     def replace_prefix(self, prefix: str, new_prefix: str='') -> 'GimpFileCollection':
         """
@@ -161,7 +173,7 @@ class GimpFileCollection:
                 'and the result is returned with return_json().'
             )
 
-    def execute_script_and_return_json(self, script: str, timeout_in_seconds: float=None) -> Union[JsonType, Dict[str, JsonType]]:
+    def execute_script_and_return_json(self, script: str, parameters: dict=None, timeout_in_seconds: float=None) -> Union[JsonType, Dict[str, JsonType]]:
         """
         Execute a gimp script on the collection.
 
@@ -176,19 +188,22 @@ class GimpFileCollection:
         **gimp_image_delete(image)**.
 
         :param script: Script to be executed on the files.
+        :param parameters: Parameters to pass to the script.
         :param timeout_in_seconds:  Script execution timeout in seconds.
         :return: Dictionary of filenames and results if the script reads a single file.
                  Json if the script takes the whole list of files.
         """
+        parameters = parameters or {}
         if "open_xcf('__file__')" in script and "return_json(" in script:
             return {file: self._gsr.execute_and_parse_json(
                 script.replace('__file__', escape_single_quotes(file)),
+                parameters=parameters,
                 timeout_in_seconds=timeout_in_seconds
             ) for file in self._files}
         elif "get_json('__files__')" in script and "return_json(" in script:
             return self._gsr.execute_and_parse_json(
                 script,
-                parameters={'__files__': self._files},
+                parameters={**parameters, '__files__': self._files},
                 timeout_in_seconds=timeout_in_seconds
             )
         else:
@@ -198,6 +213,67 @@ class GimpFileCollection:
                 'or a list of files must be retrieved by get_json(\'__files__\') ' +
                 'and the result is returned with return_json().'
             )
+
+    def copy_layer_from(self, other_collection: 'GimpFileCollection', layer_name: str, layer_position: int=1, timeout_in_seconds: float=None) -> 'GimpFileCollection':
+        """
+        Copies a layer from another collection into this collection.
+
+        :param other_collection: The collection from which to take the layer.
+        :param layer_name: Name of the layer to copy.
+        :param layer_position: Layer position in the destination image.
+        :return: :py:class:`~pgimp.GimpFileCollection.GimpFileCollection`
+        """
+        prefix_in_other_collection = other_collection.get_prefix()
+        files_in_other_collection = map(lambda file: file[len(prefix_in_other_collection):], other_collection._files)
+        prefix_in_this_collection = self.get_prefix()
+        files_in_this_collection = map(lambda file: file[len(prefix_in_this_collection):], other_collection._files)
+        missing = set(files_in_this_collection) - set(files_in_other_collection)
+        if len(missing) > 0:
+            raise MissingFilesException(
+                'The other collection is smaller than this collection by the following entries: ' +
+                ', '.join(missing)
+            )
+
+        script = textwrap.dedent(
+            """
+            import gimp
+            import os
+            from pgimp.gimp.file import open_xcf, save_xcf
+            from pgimp.gimp.parameter import get_json, get_string, get_int, return_json
+            from pgimp.gimp.layer import copy_layer
+            
+            prefix_in_other_collection = get_string('prefix_in_other_collection')
+            prefix_in_this_collection = get_string('prefix_in_this_collection')
+            layer_name = get_string('layer_name')
+            layer_position = get_string('layer_position')
+            files = get_json('__files__')
+            
+            for file in files:
+                file = file[len(prefix_in_this_collection):]
+                file_src = os.path.join(prefix_in_other_collection, file)
+                file_dst = os.path.join(prefix_in_this_collection, file)
+                image_src = open_xcf(file_src)
+                image_dst = open_xcf(file_dst)
+                copy_layer(image_src, layer_name, image_dst, layer_name, layer_position)
+                save_xcf(image_dst, file_dst)
+                gimp.pdb.gimp_image_delete(image_src)
+                gimp.pdb.gimp_image_delete(image_dst)
+                
+            return_json(None)
+            """
+        )
+
+        self.execute_script_and_return_json(
+            script,
+            parameters={
+                'prefix_in_other_collection': prefix_in_other_collection,
+                'prefix_in_this_collection': prefix_in_this_collection,
+                'layer_name': layer_name,
+                'layer_position': layer_position,
+            },
+            timeout_in_seconds=timeout_in_seconds
+        )
+        return self
 
     @classmethod
     def create_from_pathname(cls, pathname: str):
