@@ -1,4 +1,5 @@
 import os
+import textwrap
 from glob import glob
 from typing import List, Callable
 
@@ -76,20 +77,62 @@ class GimpFileCollection:
         return GimpFileCollection(list(files))
 
     def find_files_containing_layer_by_predictate(self, predicate: Callable[[List[Layer]], bool]) -> List[str]:
+        """
+        Find files that contain a layer matching the predicate.
+
+        :param predicate: A function that takes a list of layers and returns bool.
+        :return: List of files matching the predicate.
+        """
         return list(filter(lambda file: predicate(self._gimp_file_factory(file).layers()), self._files))
 
-    def find_files_containing_layer_by_name(self, layer_name: str):
-        return self.find_files_containing_layer_by_predictate(
-            lambda layers: layer_name in map(lambda layer: layer.name, layers)
-        )
+    def find_files_containing_layer_by_name(self, layer_name: str, timeout_in_seconds: float=None) -> List[str]:
+        """
+        Find files that contain a layer that matching the given name.
+
+        :param layer_name: Layer name to search for.
+        :param timeout_in_seconds: Script execution timeout in seconds.
+        :return: List of files containing the layer with the given name.
+        """
+        return self.find_files_by_script(textwrap.dedent(
+            """
+            import gimp
+            from pgimp.gimp.file import open_xcf
+            from pgimp.gimp.parameter import return_json, get_json
+            files = get_json('__files__')
+            matches = []
+            for file in files:
+                image = open_xcf(file)
+                for layer in image.layers:
+                    if layer.name == '{0:s}':
+                        matches.append(file)
+                gimp.pdb.gimp_image_delete(image)
+            return_json(matches)
+            """
+        ).format(escape_single_quotes(layer_name)), timeout_in_seconds=timeout_in_seconds)
 
     def find_files_by_script(self, script_predicate: str, timeout_in_seconds: float=None) -> List[str]:
-        if "open_xcf('__file__')" in script_predicate:
+        """
+        Find files matching certain criteria by executing a gimp script.
+
+        If the script opens a file with **open_xcf('__file__')**, then the script is executed for each file
+        and a boolean result returned by **return_bool(value)** is expected.
+
+        If the script retrieves the whole list of files with **get_json('__files__')**, then the script is
+        only executed once and passed the whole list of files as a parameter. A result returned by
+        **return_json(value)** in the form of a list is expected. This solution has better performance
+        but you need to make sure that memory is cleaned up between opening files, e.g. by invoking
+        **gimp_image_delete(image)**.
+
+        :param script_predicate:
+        :param timeout_in_seconds:
+        :return:
+        """
+        if "open_xcf('__file__')" in script_predicate and "return_bool(" in script_predicate:
             return list(filter(lambda file: self._gsr.execute_and_parse_bool(
                 script_predicate.replace('__file__', escape_single_quotes(file)),
                 timeout_in_seconds=timeout_in_seconds
             ), self._files))
-        elif "get_json('__files__')" in script_predicate:
+        elif "get_json('__files__')" in script_predicate and "return_json(" in script_predicate:
             return self._gsr.execute_and_parse_json(
                 script_predicate,
                 parameters={'__files__': self._files},
@@ -98,7 +141,9 @@ class GimpFileCollection:
         else:
             raise GimpMissingRequiredParameterException(
                 'Either an image file must be opened with open_xcf(\'__file__\') ' +
-                'or a list of files must be retrieved by get_json(\'__files__\').'
+                'and the result is returned with return_bool() ' +
+                'or a list of files must be retrieved by get_json(\'__files__\') ' +
+                'and the result is returned with return_json().'
             )
 
     @classmethod

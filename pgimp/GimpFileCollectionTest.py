@@ -112,15 +112,16 @@ def test_find_files_containing_layer_by_predictate():
 
         collection = GimpFileCollection([with_white, without_white])
 
-        layers = collection.find_files_containing_layer_by_predictate(
+        files = collection.find_files_containing_layer_by_predictate(
             lambda layers: 'White' in map(lambda layer: layer.name, layers)
         )
-        assert len(layers) == 1
+        assert len(files) == 1
+        assert with_white == files[0]
 
-        layers = collection.find_files_containing_layer_by_predictate(
+        files = collection.find_files_containing_layer_by_predictate(
             lambda layers: 'Not existing' in map(lambda layer: layer.name, layers)
         )
-        assert len(layers) == 0
+        assert len(files) == 0
 
 
 def test_find_files_containing_layer_by_name():
@@ -135,11 +136,12 @@ def test_find_files_containing_layer_by_name():
 
         collection = GimpFileCollection([with_white, without_white])
 
-        layers = collection.find_files_containing_layer_by_name('White')
-        assert len(layers) == 1
+        files = collection.find_files_containing_layer_by_name('White', timeout_in_seconds=10)
+        assert len(files) == 1
+        assert with_white == files[0]
 
-        layers = collection.find_files_containing_layer_by_name('Not existing')
-        assert len(layers) == 0
+        files = collection.find_files_containing_layer_by_name('Not existing', timeout_in_seconds=10)
+        assert len(files) == 0
 
 
 def test_find_files_by_script_with_script_that_takes_single_file():
@@ -166,11 +168,12 @@ def test_find_files_by_script_with_script_that_takes_single_file():
             """
         )
 
-        layers = collection.find_files_by_script(script.format(escape_single_quotes('White')), timeout_in_seconds=3)
-        assert len(layers) == 1
+        files = collection.find_files_by_script(script.format(escape_single_quotes('White')), timeout_in_seconds=3)
+        assert len(files) == 1
+        assert with_white == files[0]
 
-        layers = collection.find_files_by_script(script.format(escape_single_quotes('Not existing')), timeout_in_seconds=3)
-        assert len(layers) == 0
+        files = collection.find_files_by_script(script.format(escape_single_quotes('Not existing')), timeout_in_seconds=3)
+        assert len(files) == 0
 
 
 def test_find_files_by_script_with_script_that_takes_multiple_files():
@@ -202,11 +205,12 @@ def test_find_files_by_script_with_script_that_takes_multiple_files():
             """
         )
 
-        layers = collection.find_files_by_script(script.format(escape_single_quotes('White')), timeout_in_seconds=3)
-        assert len(layers) == 1
+        files = collection.find_files_by_script(script.format(escape_single_quotes('White')), timeout_in_seconds=3)
+        assert len(files) == 1
+        assert with_white == files[0]
 
-        layers = collection.find_files_by_script(script.format(escape_single_quotes('Not existing')), timeout_in_seconds=3)
-        assert len(layers) == 0
+        files = collection.find_files_by_script(script.format(escape_single_quotes('Not existing')), timeout_in_seconds=3)
+        assert len(files) == 0
 
 
 def test_find_files_by_script_without_required_parameters():
