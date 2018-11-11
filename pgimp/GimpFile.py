@@ -13,6 +13,8 @@ from pgimp.layers.Layer import Layer
 from pgimp.util import file
 from pgimp.util.string import escape_single_quotes
 
+EXTENSION = '.xcf'
+
 
 class GimpFileType(Enum):
     RGB = 0

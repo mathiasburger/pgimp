@@ -31,4 +31,7 @@ Exception Handling
     :undoc-members:
     :show-inheritance:
 
-
+.. autoclass:: pgimp.GimpFileCollection.NonExistingPathComponentException
+    :members:
+    :undoc-members:
+    :show-inheritance:

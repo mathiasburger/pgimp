@@ -10,3 +10,8 @@ Interacting with Gimp
     :members:
     :undoc-members:
     :show-inheritance:
+
+.. autoclass:: pgimp.GimpFile.GimpFileCollection
+    :members:
+    :undoc-members:
+    :show-inheritance:
