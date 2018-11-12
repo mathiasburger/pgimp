@@ -214,20 +214,24 @@ class GimpFileCollection:
                 'and the result is returned with return_json().'
             )
 
-    def copy_layer_from(self, other_collection: 'GimpFileCollection', layer_name: str, layer_position: int=1, timeout_in_seconds: float=None) -> 'GimpFileCollection':
+    def copy_layer_from(self, other_collection: 'GimpFileCollection', layer_name: str, layer_position: int=1, other_can_be_smaller: bool=False, timeout_in_seconds: float=None) -> 'GimpFileCollection':
         """
         Copies a layer from another collection into this collection.
 
         :param other_collection: The collection from which to take the layer.
         :param layer_name: Name of the layer to copy.
         :param layer_position: Layer position in the destination image.
+        :param other_can_be_smaller: Whether the other collection must at least contain all the elements of the current collection or not.
+        :param timeout_in_seconds: Script execution timeout in seconds.
         :return: :py:class:`~pgimp.GimpFileCollection.GimpFileCollection`
         """
         prefix_in_other_collection = other_collection.get_prefix()
         files_in_other_collection = map(lambda file: file[len(prefix_in_other_collection):], other_collection._files)
         prefix_in_this_collection = self.get_prefix()
         files_in_this_collection = map(lambda file: file[len(prefix_in_this_collection):], other_collection._files)
-        missing = set(files_in_this_collection) - set(files_in_other_collection)
+        missing = set()
+        if not other_can_be_smaller:
+            missing = set(files_in_this_collection) - set(files_in_other_collection)
         if len(missing) > 0:
             raise MissingFilesException(
                 'The other collection is smaller than this collection by the following entries: ' +
@@ -239,19 +243,22 @@ class GimpFileCollection:
             import gimp
             import os
             from pgimp.gimp.file import open_xcf, save_xcf
-            from pgimp.gimp.parameter import get_json, get_string, get_int, return_json
+            from pgimp.gimp.parameter import get_json, get_string, get_int, get_bool, return_json
             from pgimp.gimp.layer import copy_layer
             
             prefix_in_other_collection = get_string('prefix_in_other_collection')
             prefix_in_this_collection = get_string('prefix_in_this_collection')
             layer_name = get_string('layer_name')
             layer_position = get_int('layer_position')
+            other_can_be_smaller = get_bool('other_can_be_smaller')
             files = get_json('__files__')
             
             for file in files:
                 file = file[len(prefix_in_this_collection):]
                 file_src = os.path.join(prefix_in_other_collection, file)
                 file_dst = os.path.join(prefix_in_this_collection, file)
+                if other_can_be_smaller and not os.path.exists(file_src):
+                    continue
                 image_src = open_xcf(file_src)
                 image_dst = open_xcf(file_dst)
                 copy_layer(image_src, layer_name, image_dst, layer_name, layer_position)
@@ -270,6 +277,7 @@ class GimpFileCollection:
                 'prefix_in_this_collection': prefix_in_this_collection,
                 'layer_name': layer_name,
                 'layer_position': layer_position,
+                'other_can_be_smaller': other_can_be_smaller,
             },
             timeout_in_seconds=timeout_in_seconds
         )

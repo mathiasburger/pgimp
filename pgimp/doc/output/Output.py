@@ -23,7 +23,7 @@ class Output(ABC):
         pass
 
     @abstractmethod
-    def start_class(self, name: str):
+    def start_class(self, name: str, baseclasses: List[str]):
         pass
 
     @abstractmethod

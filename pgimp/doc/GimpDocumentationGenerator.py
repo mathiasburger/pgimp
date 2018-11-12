@@ -42,6 +42,7 @@ class GimpDocumentationGenerator:
         super().__init__()
         self._output = output
         self._gsr = GimpScriptRunner()
+        self._ordered_gimp_classes = []
 
     def __call__(self):
         self._document_pdb_module()
@@ -52,24 +53,60 @@ class GimpDocumentationGenerator:
         self._document_gimpfu_constants()
 
     def _document_known_gimp_classes(self):
-        gimp_classes = [gimpTypeMapping[i] for i in KNOWN_GIMP_CLASSES]
-        for gimp_class in gimp_classes:
-            self._output.start_class(gimp_class)
+        gimp_classes = set([gimpTypeMapping[i] for i in KNOWN_GIMP_CLASSES])
+        ordered_gimp_classes = self._get_ordered_gimp_classes()
+        ordered_gimp_classes = [x for x in ordered_gimp_classes if x in gimp_classes]
+        for gimp_class in ordered_gimp_classes:
             attrs = self._execute(
                 'from pgimp.gimp.parameter import return_json\n' +
                 'attrs = filter(lambda s: not s.startswith("__"), dir(gimp.{0:s}))\n'.format(gimp_class) +
                 'props = filter(lambda a: type(eval("gimp.{:s}." + a)).__name__ == "getset_descriptor", attrs)\n'.format(gimp_class) +
                 'methods = filter(lambda a: type(eval("gimp.{:s}." + a)).__name__ == "method_descriptor", attrs)\n'.format(gimp_class) +
-                'return_json({"props": props, "methods": methods})'
+                'baseclasses = map(lambda cls: cls.__name__, gimp.{0:s}.__bases__)\n'.format(gimp_class) +
+                'return_json({"props": props, "methods": methods, "baseclasses": baseclasses})'
             )
             props = attrs['props']
             methods = attrs['methods']
+            baseclasses = attrs['baseclasses']
+            self._output.start_class(gimp_class, baseclasses)
             self._output.class_properties(props)
             self._output.class_methods(methods)
 
+    def _get_ordered_gimp_classes(self):
+        if not self._ordered_gimp_classes:
+            unordered_gimp_classes = self._execute(textwrap.dedent(
+                """
+                import gimp
+                from pgimp.gimp.parameter import return_json
+                import inspect
+                classes = inspect.getmembers(gimp, inspect.isclass)
+                return_json(map(lambda cls: (cls[0], inspect.getmro(cls[1])[1].__name__), classes))
+                """
+            ))
+
+            dependencies = {}
+            for cls, parent in unordered_gimp_classes:
+                if parent not in dependencies:
+                    dependencies[parent] = []
+                dependencies[parent].append(cls)
+            visited = OrderedDict()
+            to_visit = {'object'}
+            while to_visit:
+                to_visit_new = set([])
+                for element in to_visit:
+                    visited[element] = True
+                    if element in dependencies:
+                        to_visit_new = to_visit_new.union(set(dependencies[element]))
+                to_visit = to_visit_new - set(visited)
+
+            self._ordered_gimp_classes = list(visited.keys())
+        return self._ordered_gimp_classes
+
     def _document_unknown_gimp_classes(self):
         gimp_classes = [gimpTypeMapping[i] for i in UNKNOWN_GIMP_CLASSES]
-        for gimp_class in gimp_classes:
+        ordered_gimp_classes = self._get_ordered_gimp_classes()
+        ordered_gimp_classes = [x for x in ordered_gimp_classes if x in gimp_classes]
+        for gimp_class in ordered_gimp_classes:
             self._output.start_unknown_class(gimp_class)
 
     def _document_pdb_module(self):

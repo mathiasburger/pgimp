@@ -80,8 +80,8 @@ class OutputPythonSkeleton(Output):
 
         self._append("__all__ = ['pdb']\n")
 
-    def start_class(self, name: str):
-        self._append('\n\nclass {:s}:'.format(name))
+    def start_class(self, name: str, baseclasses: List[str]):
+        self._append('\n\nclass {:s}({:s}):'.format(name, ', '.join(baseclasses)))
 
     def class_properties(self, properties: List[str]):
         for property in properties:
