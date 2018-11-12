@@ -300,7 +300,7 @@ class GimpFileCollection:
         :param layer_name: Name of the layer to copy.
         :param layer_position: Layer position in the destination image.
         :param timeout_in_seconds: Script execution timeout in seconds.
-        :return:
+        :return: :py:class:`~pgimp.GimpFileCollection.GimpFileCollection`
         """
         prefix_in_other_collection = other_collection.get_prefix()
         prefix_in_this_collection = self.get_prefix()
