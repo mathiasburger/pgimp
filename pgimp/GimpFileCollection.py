@@ -1,5 +1,6 @@
 import os
 import textwrap
+from enum import Enum
 from glob import glob
 from typing import List, Callable, Union, Dict
 
@@ -29,6 +30,11 @@ class MissingFilesException(GimpException):
     Indicates that files are missing.
     """
     pass
+
+
+class MaskForegroundColor(Enum):
+    WHITE = 1
+    BLACK = 0
 
 
 class GimpFileCollection:
@@ -214,7 +220,7 @@ class GimpFileCollection:
                 'and the result is returned with return_json().'
             )
 
-    def copy_layer_from(self, other_collection: 'GimpFileCollection', layer_name: str, layer_position: int=1, other_can_be_smaller: bool=False, timeout_in_seconds: float=None) -> 'GimpFileCollection':
+    def copy_layer_from(self, other_collection: 'GimpFileCollection', layer_name: str, layer_position: int=0, other_can_be_smaller: bool=False, timeout_in_seconds: float=None) -> 'GimpFileCollection':
         """
         Copies a layer from another collection into this collection.
 
@@ -278,6 +284,67 @@ class GimpFileCollection:
                 'layer_name': layer_name,
                 'layer_position': layer_position,
                 'other_can_be_smaller': other_can_be_smaller,
+            },
+            timeout_in_seconds=timeout_in_seconds
+        )
+        return self
+
+    def merge_mask_layer_from(self, other_collection: 'GimpFileCollection', layer_name: str, mask_foreground_color: MaskForegroundColor=MaskForegroundColor.WHITE, layer_position: int=0, timeout_in_seconds: float=None):
+        """
+        Merge masks together. Masks should contain grayscale values or have an rgb gray value (r, g, b)
+        with r == g == b. In case of rgb, the componentwise minimum or maximum will be taken depending
+        on the foreground color. When the mask foreground color is white, then the maximum of values is
+        taken when merging. Otherwise the minimum is taken.
+
+        :param other_collection: The collection from which to merge the mask.
+        :param layer_name: Name of the layer to copy.
+        :param layer_position: Layer position in the destination image.
+        :param timeout_in_seconds: Script execution timeout in seconds.
+        :return:
+        """
+        prefix_in_other_collection = other_collection.get_prefix()
+        prefix_in_this_collection = self.get_prefix()
+
+        script = textwrap.dedent(
+            """
+            import gimp
+            import os
+            from pgimp.gimp.file import open_xcf, save_xcf
+            from pgimp.gimp.parameter import get_json, get_string, get_int, return_json
+            from pgimp.gimp.layer import merge_mask_layer
+
+            prefix_in_other_collection = get_string('prefix_in_other_collection')
+            prefix_in_this_collection = get_string('prefix_in_this_collection')
+            layer_name = get_string('layer_name')
+            layer_position = get_int('layer_position')
+            mask_foreground_color = get_int('mask_foreground_color')
+            files = get_json('__files__')
+
+            for file in files:
+                file = file[len(prefix_in_this_collection):]
+                file_src = os.path.join(prefix_in_other_collection, file)
+                file_dst = os.path.join(prefix_in_this_collection, file)
+                if not os.path.exists(file_src):
+                    continue
+                image_src = open_xcf(file_src)
+                image_dst = open_xcf(file_dst)
+                merge_mask_layer(image_src, layer_name, image_dst, layer_name, mask_foreground_color, layer_position)
+                save_xcf(image_dst, file_dst)
+                gimp.pdb.gimp_image_delete(image_src)
+                gimp.pdb.gimp_image_delete(image_dst)
+
+            return_json(None)
+            """
+        )
+
+        self.execute_script_and_return_json(
+            script,
+            parameters={
+                'prefix_in_other_collection': prefix_in_other_collection,
+                'prefix_in_this_collection': prefix_in_this_collection,
+                'layer_name': layer_name,
+                'layer_position': layer_position,
+                'mask_foreground_color': mask_foreground_color.value,
             },
             timeout_in_seconds=timeout_in_seconds
         )

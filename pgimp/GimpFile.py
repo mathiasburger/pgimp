@@ -225,7 +225,7 @@ class GimpFile:
             layer = gimp.pdb.gimp_layer_new(image, image.width, image.height, gimpenums.INDEXED_IMAGE, '{4:s}', 100, gimpenums.NORMAL_MODE)
             array = np.load('{5:s}')
             bytes = np.uint8(array).tobytes()
-            region = layer.get_pixel_rgn(0, 0, layer.width, layer.height, True)
+            region = layer.get_pixel_rgn(0, 0, layer.width, layer.height)
             region[: ,:] = bytes
             gimp.pdb.gimp_image_add_layer(image, layer, 0)
         
@@ -351,7 +351,7 @@ class GimpFile:
         >>> import numpy as np
         >>> with TempFile('.xcf') as f:  # doctest:+ELLIPSIS
         ...     gimp_file = GimpFile(f).create('Background', np.zeros(shape=(1, 2), dtype=np.uint8))
-        ...     gimp_file.add_layer_from_numpy('Foreground', np.ones(shape=(1, 2)), opacity=55., visible=False)
+        ...     gimp_file.add_layer_from_numpy('Foreground', np.ones(shape=(1, 2), dtype=np.uint8)*255, opacity=55., visible=False)
         ...     gimp_file.layer_names()
         <...>
         ['Foreground', 'Background']
@@ -408,6 +408,9 @@ class GimpFile:
         return self
 
     def _numpy_array_info(self, content: np.ndarray):
+        if content.dtype != np.uint8:
+            raise DataFormatException('Only uint8 is supported')
+
         if len(content.shape) == 2:
             height, width = content.shape
             depth = 1
@@ -440,7 +443,7 @@ class GimpFile:
         ...     green_content = np.zeros(shape=(1, 1, 3), dtype=np.uint8)
         ...     green_content[:, :] = [0, 255, 0]
         ...     other_file = GimpFile(other).create('Green', green_content)
-        ...     current_file = GimpFile(current).create('Background', np.zeros(shape=(1, 1, 3)))
+        ...     current_file = GimpFile(current).create('Background', np.zeros(shape=(1, 1, 3), dtype=np.uint8))
         ...     current_file.add_layer_from_file(
         ...         other_file,
         ...         'Green',
@@ -501,7 +504,7 @@ class GimpFile:
         ...     green_content = np.zeros(shape=(1, 1, 3), dtype=np.uint8)
         ...     green_content[:, :] = [0, 255, 0]
         ...     other_file = GimpFile(other).create('Green', green_content)
-        ...     current_file = GimpFile(current).create('Green', np.zeros(shape=(1, 1, 3)))
+        ...     current_file = GimpFile(current).create('Green', np.zeros(shape=(1, 1, 3), dtype=np.uint8))
         ...     current_file.merge_layer_from_file(other_file, 'Green')
         ...     current_file.layer_names()
         ...     current_file.layer_to_numpy('Green')

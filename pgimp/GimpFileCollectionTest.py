@@ -5,9 +5,9 @@ import textwrap
 import numpy as np
 import pytest
 
-from pgimp.GimpFile import GimpFile
+from pgimp.GimpFile import GimpFile, GimpFileType
 from pgimp.GimpFileCollection import GimpFileCollection, NonExistingPathComponentException, \
-    GimpMissingRequiredParameterException
+    GimpMissingRequiredParameterException, MaskForegroundColor
 from pgimp.util import file
 from pgimp.util.TempFile import TempFile
 from pgimp.util.string import escape_single_quotes
@@ -125,11 +125,11 @@ def test_find_files_containing_layer_by_predictate():
     with TempFile('.xcf') as with_white, TempFile('.xcf') as without_white:
         GimpFile(with_white)\
             .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8))\
-            .add_layer_from_numpy('White', np.ones(shape=(1, 1)))
+            .add_layer_from_numpy('White', np.ones(shape=(1, 1), dtype=np.uint8)*255)
 
         GimpFile(without_white) \
             .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8)) \
-            .add_layer_from_numpy('Black', np.zeros(shape=(1, 1)))
+            .add_layer_from_numpy('Black', np.zeros(shape=(1, 1), dtype=np.uint8))
 
         collection = GimpFileCollection([with_white, without_white])
 
@@ -149,11 +149,11 @@ def test_find_files_containing_layer_by_name():
     with TempFile('.xcf') as with_white, TempFile('.xcf') as without_white:
         GimpFile(with_white)\
             .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8))\
-            .add_layer_from_numpy('White', np.ones(shape=(1, 1)))
+            .add_layer_from_numpy('White', np.ones(shape=(1, 1), dtype=np.uint8)*255)
 
         GimpFile(without_white) \
             .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8)) \
-            .add_layer_from_numpy('Black', np.zeros(shape=(1, 1)))
+            .add_layer_from_numpy('Black', np.zeros(shape=(1, 1), dtype=np.uint8))
 
         collection = GimpFileCollection([with_white, without_white])
 
@@ -169,11 +169,11 @@ def test_find_files_by_script_with_script_that_takes_single_file():
     with TempFile('.xcf') as with_white, TempFile('.xcf') as without_white:
         GimpFile(with_white)\
             .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8))\
-            .add_layer_from_numpy('White', np.ones(shape=(1, 1)))
+            .add_layer_from_numpy('White', np.ones(shape=(1, 1), dtype=np.uint8)*255)
 
         GimpFile(without_white) \
             .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8)) \
-            .add_layer_from_numpy('Black', np.zeros(shape=(1, 1)))
+            .add_layer_from_numpy('Black', np.zeros(shape=(1, 1), dtype=np.uint8))
 
         collection = GimpFileCollection([with_white, without_white])
 
@@ -201,11 +201,11 @@ def test_find_files_by_script_with_script_that_takes_multiple_files():
     with TempFile('.xcf') as with_white, TempFile('.xcf') as without_white:
         GimpFile(with_white)\
             .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8))\
-            .add_layer_from_numpy('White', np.ones(shape=(1, 1)))
+            .add_layer_from_numpy('White', np.ones(shape=(1, 1), dtype=np.uint8)*255)
 
         GimpFile(without_white) \
             .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8)) \
-            .add_layer_from_numpy('Black', np.zeros(shape=(1, 1)))
+            .add_layer_from_numpy('Black', np.zeros(shape=(1, 1), dtype=np.uint8))
 
         collection = GimpFileCollection([with_white, without_white])
 
@@ -250,11 +250,11 @@ def test_execute_script_and_return_json_with_script_that_takes_single_file():
     with TempFile('.xcf') as with_white, TempFile('.xcf') as without_white:
         GimpFile(with_white)\
             .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8))\
-            .add_layer_from_numpy('White', np.ones(shape=(1, 1)))
+            .add_layer_from_numpy('White', np.ones(shape=(1, 1), dtype=np.uint8)*255)
 
         GimpFile(without_white) \
             .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8)) \
-            .add_layer_from_numpy('Black', np.zeros(shape=(1, 1)))
+            .add_layer_from_numpy('Black', np.zeros(shape=(1, 1), dtype=np.uint8))
 
         collection = GimpFileCollection([with_white, without_white])
 
@@ -281,11 +281,11 @@ def test_execute_script_and_return_json_with_script_that_takes_multiple_files():
     with TempFile('.xcf') as with_white, TempFile('.xcf') as without_white:
         GimpFile(with_white)\
             .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8))\
-            .add_layer_from_numpy('White', np.ones(shape=(1, 1)))
+            .add_layer_from_numpy('White', np.ones(shape=(1, 1), dtype=np.uint8)*255)
 
         GimpFile(without_white) \
             .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8)) \
-            .add_layer_from_numpy('Black', np.zeros(shape=(1, 1)))
+            .add_layer_from_numpy('Black', np.zeros(shape=(1, 1), dtype=np.uint8))
 
         collection = GimpFileCollection([with_white, without_white])
 
@@ -314,25 +314,125 @@ def test_execute_script_and_return_json_with_script_that_takes_multiple_files():
 def test_copy_layer_from():
     with tempfile.TemporaryDirectory('_src') as srcdir, tempfile.TemporaryDirectory('_dst') as dstdir:
         src_1 = GimpFile(os.path.join(srcdir, 'file1.xcf'))\
-            .create('Background', np.zeros(shape=(1, 1)))\
-            .add_layer_from_numpy('White', np.ones(shape=(1, 1), dtype=np.uint8))
+            .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8))\
+            .add_layer_from_numpy('White', np.ones(shape=(1, 1), dtype=np.uint8)*255)
         src_2 = GimpFile(os.path.join(srcdir, 'file2.xcf'))\
-            .create('Background', np.zeros(shape=(1, 1))) \
-            .add_layer_from_numpy('White', np.ones(shape=(1, 1), dtype=np.uint8))
+            .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8)) \
+            .add_layer_from_numpy('White', np.ones(shape=(1, 1), dtype=np.uint8)*255)
 
         dst_1 = GimpFile(os.path.join(dstdir, 'file1.xcf')) \
-            .create('Background', np.zeros(shape=(1, 1))) \
-            .add_layer_from_numpy('White', np.zeros(shape=(1, 1), dtype=np.uint8))
+            .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8)) \
+            .add_layer_from_numpy('White', np.zeros(shape=(1, 1), dtype=np.uint8)*255)
         dst_2 = GimpFile(os.path.join(dstdir, 'file2.xcf')) \
-            .create('Background', np.zeros(shape=(1, 1)))
+            .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8))
 
         src_collection = GimpFileCollection([src_1.get_file(), src_2.get_file()])
         dst_collection = GimpFileCollection([dst_1.get_file(), dst_2.get_file()])
 
         dst_collection.copy_layer_from(src_collection, 'White', layer_position=1, timeout_in_seconds=10)
 
-        assert np.all(dst_1.layer_to_numpy('White') == 1)
+        assert np.all(dst_1.layer_to_numpy('White') == 255)
         assert ['Background', 'White'] == dst_1.layer_names()
         assert 'White' in dst_2.layer_names()
-        assert np.all(dst_2.layer_to_numpy('White') == 1)
+        assert np.all(dst_2.layer_to_numpy('White') == 255)
         assert ['Background', 'White'] == dst_2.layer_names()
+
+
+def test_merge_mask_layer_from_with_grayscale_and_foreground_color_white():
+    with tempfile.TemporaryDirectory('_src') as srcdir, tempfile.TemporaryDirectory('_dst') as dstdir:
+        src_1 = GimpFile(os.path.join(srcdir, 'file1.xcf'))\
+            .create('Mask', np.array([[255, 0]], dtype=np.uint8))
+
+        dst_1 = GimpFile(os.path.join(dstdir, 'file1.xcf')) \
+            .create('Mask', np.array([[0, 255]], dtype=np.uint8))
+        dst_2 = GimpFile(os.path.join(dstdir, 'file2.xcf')) \
+            .create('Mask', np.array([[0, 255]], dtype=np.uint8))
+
+        src_collection = GimpFileCollection([src_1.get_file()])
+        dst_collection = GimpFileCollection([dst_1.get_file(), dst_2.get_file()])
+
+        dst_collection.merge_mask_layer_from(src_collection, 'Mask', MaskForegroundColor.WHITE, timeout_in_seconds=10)
+
+        assert np.all(dst_1.layer_to_numpy('Mask') == [[255], [255]])
+        assert ['Mask'] == dst_1.layer_names()
+        assert 'Mask' in dst_2.layer_names()
+        assert np.all(dst_2.layer_to_numpy('Mask') == [[0], [255]])
+        assert ['Mask'] == dst_2.layer_names()
+
+
+def test_merge_mask_layer_from_with_grayscale_and_foreground_color_black():
+    with tempfile.TemporaryDirectory('_src') as srcdir, tempfile.TemporaryDirectory('_dst') as dstdir:
+        src_1 = GimpFile(os.path.join(srcdir, 'file1.xcf'))\
+            .create('Mask', np.array([[255, 0]], dtype=np.uint8))
+
+        dst_1 = GimpFile(os.path.join(dstdir, 'file1.xcf')) \
+            .create('Mask', np.array([[0, 255]], dtype=np.uint8))
+        dst_2 = GimpFile(os.path.join(dstdir, 'file2.xcf')) \
+            .create('Mask', np.array([[0, 255]], dtype=np.uint8))
+
+        src_collection = GimpFileCollection([src_1.get_file()])
+        dst_collection = GimpFileCollection([dst_1.get_file(), dst_2.get_file()])
+
+        dst_collection.merge_mask_layer_from(src_collection, 'Mask', MaskForegroundColor.BLACK, timeout_in_seconds=10)
+
+        assert np.all(dst_1.layer_to_numpy('Mask') == [[0], [0]])
+        assert ['Mask'] == dst_1.layer_names()
+        assert 'Mask' in dst_2.layer_names()
+        assert np.all(dst_2.layer_to_numpy('Mask') == [[0], [255]])
+        assert ['Mask'] == dst_2.layer_names()
+
+
+def test_merge_mask_layer_from_with_color():
+    with tempfile.TemporaryDirectory('_src') as srcdir, tempfile.TemporaryDirectory('_dst') as dstdir:
+        src_1 = GimpFile(os.path.join(srcdir, 'file1.xcf'))\
+            .create('Mask', np.array([[[255, 255, 255], [0, 0, 0]]], dtype=np.uint8))
+
+        dst_1 = GimpFile(os.path.join(dstdir, 'file1.xcf')) \
+            .create('Mask', np.array([[[0, 0, 0], [255, 255, 255]]], dtype=np.uint8))
+        dst_2 = GimpFile(os.path.join(dstdir, 'file2.xcf')) \
+            .create('Mask', np.array([[[0, 0, 0], [255, 255, 255]]], dtype=np.uint8))
+
+        src_collection = GimpFileCollection([src_1.get_file()])
+        dst_collection = GimpFileCollection([dst_1.get_file(), dst_2.get_file()])
+
+        dst_collection.merge_mask_layer_from(src_collection, 'Mask', MaskForegroundColor.WHITE, timeout_in_seconds=10)
+
+        assert np.all(dst_1.layer_to_numpy('Mask') == [[255, 255, 255], [255, 255, 255]])
+        assert ['Mask'] == dst_1.layer_names()
+        assert 'Mask' in dst_2.layer_names()
+        assert np.all(dst_2.layer_to_numpy('Mask') == [[0, 0, 0], [255, 255, 255]])
+        assert ['Mask'] == dst_2.layer_names()
+
+
+def test_merge_mask_layer_from_with_mask_not_available_in_files_in_both_collections_and_foreground_color_white():
+    with tempfile.TemporaryDirectory('_src') as srcdir, tempfile.TemporaryDirectory('_dst') as dstdir:
+        src_1 = GimpFile(os.path.join(srcdir, 'file1.xcf')) \
+            .create_empty(2, 1, GimpFileType.GRAY)
+
+        dst_1 = GimpFile(os.path.join(dstdir, 'file1.xcf')) \
+            .create_empty(2, 1, GimpFileType.GRAY)
+
+        src_collection = GimpFileCollection([src_1.get_file()])
+        dst_collection = GimpFileCollection([dst_1.get_file()])
+
+        dst_collection.merge_mask_layer_from(src_collection, 'Mask', MaskForegroundColor.WHITE, timeout_in_seconds=10)
+
+        assert np.all(dst_1.layer_to_numpy('Mask') == [[0], [0]])
+        assert ['Mask'] == dst_1.layer_names()
+
+
+def test_merge_mask_layer_from_with_mask_not_available_in_files_in_both_collections_and_foreground_color_black():
+    with tempfile.TemporaryDirectory('_src') as srcdir, tempfile.TemporaryDirectory('_dst') as dstdir:
+        src_1 = GimpFile(os.path.join(srcdir, 'file1.xcf')) \
+            .create_empty(2, 1, GimpFileType.GRAY)
+
+        dst_1 = GimpFile(os.path.join(dstdir, 'file1.xcf')) \
+            .create_empty(2, 1, GimpFileType.GRAY)
+
+        src_collection = GimpFileCollection([src_1.get_file()])
+        dst_collection = GimpFileCollection([dst_1.get_file()])
+
+        dst_collection.merge_mask_layer_from(src_collection, 'Mask', MaskForegroundColor.BLACK, timeout_in_seconds=10)
+
+        assert np.all(dst_1.layer_to_numpy('Mask') == [[255], [255]])
+        assert ['Mask'] == dst_1.layer_names()
