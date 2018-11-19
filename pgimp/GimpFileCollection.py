@@ -147,14 +147,14 @@ class GimpFileCollection:
         >>> from pgimp.GimpFileCollection import GimpFileCollection
         >>> from pgimp.util.TempFile import TempFile
         >>> import numpy as np
-        >>> with TempFile('.xcf') as f1, TempFile('.xcf') as f2:
+        >>> with TempFile('_bg.xcf') as f1, TempFile('_fg.xcf') as f2:  # doctest: +ELLIPSIS
         ...     gf1 = GimpFile(f1).create('Background', np.zeros(shape=(2, 2), dtype=np.uint8))
         ...     gf2 = GimpFile(f2).create('Foreground', np.zeros(shape=(2, 2), dtype=np.uint8))
         ...     gfc = GimpFileCollection.create_from_gimp_files([gf1, gf2])
         ...     def find_foreground(layers: List[Layer]):
         ...         return list(filter(lambda layer: layer.name == 'Foreground', layers)) != []
         ...     gfc.find_files_containing_layer_by_predictate(find_foreground)
-
+        ['..._fg.xcf']
 
         :param predicate: A function that takes a list of layers and returns bool.
         :return: List of files matching the predicate.
@@ -164,6 +164,17 @@ class GimpFileCollection:
     def find_files_containing_layer_by_name(self, layer_name: str, timeout_in_seconds: float=None) -> List[str]:
         """
         Find files that contain a layer that matching the given name.
+
+        >>> from pgimp.GimpFile import GimpFile
+        >>> from pgimp.GimpFileCollection import GimpFileCollection
+        >>> from pgimp.util.TempFile import TempFile
+        >>> import numpy as np
+        >>> with TempFile('_bg.xcf') as f1, TempFile('_fg.xcf') as f2:  # doctest: +ELLIPSIS
+        ...     gf1 = GimpFile(f1).create('Background', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     gf2 = GimpFile(f2).create('Foreground', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     gfc = GimpFileCollection.create_from_gimp_files([gf1, gf2])
+        ...     gfc.find_files_containing_layer_by_name('Foreground')
+        ['..._fg.xcf']
 
         :param layer_name: Layer name to search for.
         :param timeout_in_seconds: Script execution timeout in seconds.
