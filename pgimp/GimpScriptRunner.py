@@ -5,6 +5,7 @@ import subprocess
 import sys
 from glob import glob
 from io import FileIO
+from json import JSONDecodeError
 from typing import Dict, Union
 
 from pgimp.GimpException import GimpException
@@ -328,4 +329,7 @@ class GimpScriptRunner:
         return stdout_content
 
     def _parse(self, input: str) -> JsonType:
-       return json.loads(input)
+        try:
+            return json.loads(input)
+        except JSONDecodeError:
+            raise GimpScriptException('Could not decode json. Input:\n' + input)
