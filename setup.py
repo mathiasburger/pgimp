@@ -13,7 +13,6 @@ try:
        file.relative_to(__file__, 'gimp'))
     )
     generate_python_skeleton()
-    packages.extend(['gimp', 'gimpenums', 'gimpfu'])
 except JSONDecodeError:
     # ignore error that occurs on some systems during generation
     print('WARNING: gimp documentation could not be generated', file=sys.stderr)
