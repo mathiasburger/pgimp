@@ -328,4 +328,4 @@ class GimpScriptRunner:
         return stdout_content
 
     def _parse(self, input: str) -> JsonType:
-        return json.loads(input)
+        return json.loads(input.strip())
