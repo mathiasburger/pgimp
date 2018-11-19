@@ -316,6 +316,61 @@ class GimpFileCollection:
         but you need to make sure that memory is cleaned up between opening files, e.g. by invoking
         **gimp_image_delete(image)**.
 
+        Example with script that is executed per file:
+
+        >>> from pgimp.GimpFile import GimpFile
+        >>> from pgimp.GimpFileCollection import GimpFileCollection
+        >>> from pgimp.util.TempFile import TempFile
+        >>> from pgimp.util.string import escape_single_quotes
+        >>> import numpy as np
+        >>> with TempFile('_bg.xcf') as f1, TempFile('_fg.xcf') as f2:  # doctest: +ELLIPSIS
+        ...     gf1 = GimpFile(f1).create('Background', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     gf2 = GimpFile(f2).create('Foreground', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     gfc = GimpFileCollection.create_from_gimp_files([gf1, gf2])
+        ...     script = textwrap.dedent(
+        ...         '''
+        ...         from pgimp.gimp.file import open_xcf
+        ...         from pgimp.gimp.parameter import return_json
+        ...         image = open_xcf('__file__')
+        ...         for layer in image.layers:
+        ...             if layer.name == '{0:s}':
+        ...                 return_json(True)
+        ...         return_json(False)
+        ...         '''
+        ...     ).format(escape_single_quotes('Foreground'))
+        ...     gfc.execute_script_and_return_json(script)
+        {'..._bg.xcf': False, '..._fg.xcf': True}
+
+        Example with script that is executed once on all files:
+
+        >>> from pgimp.GimpFile import GimpFile
+        >>> from pgimp.GimpFileCollection import GimpFileCollection
+        >>> from pgimp.util.TempFile import TempFile
+        >>> from pgimp.util.string import escape_single_quotes
+        >>> import numpy as np
+        >>> with TempFile('_bg.xcf') as f1, TempFile('_fg.xcf') as f2:  # doctest: +ELLIPSIS
+        ...     gf1 = GimpFile(f1).create('Background', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     gf2 = GimpFile(f2).create('Foreground', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     gfc = GimpFileCollection.create_from_gimp_files([gf1, gf2])
+        ...     script = textwrap.dedent(
+        ...         '''
+        ...         import gimp
+        ...         from pgimp.gimp.file import open_xcf
+        ...         from pgimp.gimp.parameter import return_json, get_json
+        ...         files = get_json('__files__')
+        ...         matches = []
+        ...         for file in files:
+        ...             image = open_xcf(file)
+        ...             for layer in image.layers:
+        ...                 if layer.name == '{0:s}':
+        ...                     matches.append(file)
+        ...             gimp.pdb.gimp_image_delete(image)
+        ...         return_json(matches)
+        ...         '''
+        ...     ).format(escape_single_quotes('Foreground'))
+        ...     gfc.execute_script_and_return_json(script)
+        ['..._fg.xcf']
+
         :param script: Script to be executed on the files.
         :param parameters: Parameters to pass to the script.
         :param timeout_in_seconds:  Script execution timeout in seconds.
