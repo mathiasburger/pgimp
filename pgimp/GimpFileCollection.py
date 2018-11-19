@@ -48,6 +48,11 @@ class GimpFileCollection:
         """
         Returns the list of files contained in the collection.
 
+        >>> from pgimp.GimpFileCollection import GimpFileCollection
+        >>> gfc = GimpFileCollection(['a.xcf', 'b.xcf'])
+        >>> gfc.get_files()
+        ['a.xcf', 'b.xcf']
+
         :return: List of files contained in the collection
         """
         return self._files
@@ -55,6 +60,11 @@ class GimpFileCollection:
     def get_prefix(self) -> str:
         """
         Returns the common path prefix for all files including a trailing slash.
+
+        >>> from pgimp.GimpFileCollection import GimpFileCollection
+        >>> gfc = GimpFileCollection(['common/pre/dir/a.xcf', 'common/pre/files/b.xcf'])
+        >>> gfc.get_prefix()
+        'common/pre/'
 
         :return: Common path prefix for all files including a trailing slash.
         """
@@ -69,7 +79,12 @@ class GimpFileCollection:
 
     def replace_prefix(self, prefix: str, new_prefix: str='') -> 'GimpFileCollection':
         """
-        Returns a new collection with filenames that do not contain the prefix.
+        Returns a new collection with filenames where the old prefix is replaced by a new prefix.
+
+        >>> from pgimp.GimpFileCollection import GimpFileCollection
+        >>> gfc = GimpFileCollection(['common/pre/dir/a.xcf', 'common/pre/files/b.xcf'])
+        >>> gfc.replace_prefix('common/pre', 'newpre').get_files()
+        ['newpre/dir/a.xcf', 'newpre/files/b.xcf']
 
         :param prefix: The prefix to strip away.
         :param new_prefix: The replacement value for the prefix.
@@ -81,6 +96,11 @@ class GimpFileCollection:
         """
         Returns a new collection with filenames that do not contain the suffix.
 
+        >>> from pgimp.GimpFileCollection import GimpFileCollection
+        >>> gfc = GimpFileCollection(['dir/a_tmp.xcf', 'files/b_tmp.xcf'])
+        >>> gfc.replace_suffix('tmp', 'final').get_files()
+        ['dir/a_final.xcf', 'files/b_final.xcf']
+
         :param suffix: The suffix to strip away.
         :param new_suffix: The replacement value for the suffix.
         :return: A :py:class:`~pgimp.GimpFileCollection.GimpFileCollection` where file suffixed are stripped away.
@@ -91,6 +111,11 @@ class GimpFileCollection:
         """
         Returns a new collection with replaced path components.
 
+        >>> from pgimp.GimpFileCollection import GimpFileCollection
+        >>> gfc = GimpFileCollection(['pre/filepre_a_suf.xcf', 'pre/filepre_b_suf.xcf'])
+        >>> gfc.replace_path_components(prefix='pre/filepre_', new_prefix='', suffix='_suf', new_suffix='').get_files()
+        ['a.xcf', 'b.xcf']
+
         :param prefix: The prefix to replace.
         :param suffix: The suffix to replace.
         :param new_prefix: The replacement value for the prefix.
@@ -99,19 +124,37 @@ class GimpFileCollection:
                  are replaced.
         """
         files = self._files
+        if not suffix.endswith(EXTENSION):
+            suffix += EXTENSION
+        if not new_suffix.endswith(EXTENSION):
+            new_suffix += EXTENSION
         check = list(filter(lambda file: file.startswith(prefix) and file.endswith(suffix), files))
         if len(check) != len(files):
             raise NonExistingPathComponentException('All files must start with the given prefix and end with the given suffix.')
+
         prefix_length = len(prefix)
         files = list(map(lambda file: new_prefix + file[prefix_length:], files))
+
         suffix_length = len(suffix)
-        if suffix_length > 0:
-            files = map(lambda file: file[:-suffix_length] + new_suffix, files)
+        files = map(lambda file: file[:-suffix_length] + new_suffix, files)
         return GimpFileCollection(list(files))
 
     def find_files_containing_layer_by_predictate(self, predicate: Callable[[List[Layer]], bool]) -> List[str]:
         """
         Find files that contain a layer matching the predicate.
+
+        >>> from pgimp.GimpFile import GimpFile
+        >>> from pgimp.GimpFileCollection import GimpFileCollection
+        >>> from pgimp.util.TempFile import TempFile
+        >>> import numpy as np
+        >>> with TempFile('.xcf') as f1, TempFile('.xcf') as f2:
+        ...     gf1 = GimpFile(f1).create('Background', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     gf2 = GimpFile(f2).create('Foreground', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     gfc = GimpFileCollection.create_from_gimp_files([gf1, gf2])
+        ...     def find_foreground(layers: List[Layer]):
+        ...         return list(filter(lambda layer: layer.name == 'Foreground', layers)) != []
+        ...     gfc.find_files_containing_layer_by_predictate(find_foreground)
+
 
         :param predicate: A function that takes a list of layers and returns bool.
         :return: List of files matching the predicate.
@@ -373,3 +416,7 @@ class GimpFileCollection:
         files = glob(pathname, recursive=True)
         files = sorted(files, key=lambda file: (file.count('/'), file))
         return cls(list(files))
+
+    @classmethod
+    def create_from_gimp_files(cls, gimp_files: List[GimpFile]):
+        return cls(list(map(lambda f: f.get_file(), gimp_files)))
