@@ -332,7 +332,7 @@ class GimpScriptRunner:
 
     def _strip_gimp_warnings(self, input):
         # workaround for gimp <2.8.22 that writes warnings to stdout instead of stderr
-        if input.startswith('(gimp:'):
+        if input.startswith('(gimp:') or input.startswith('\n(gimp:'):
             lines = input.split('\n')
             idx = 0
             for line in lines:
