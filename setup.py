@@ -8,11 +8,13 @@ from pgimp.doc.GimpDocumentationGenerator import GimpDocumentationGenerator
 from pgimp.doc.output.OutputPythonSkeleton import OutputPythonSkeleton
 from pgimp.util import file
 
+packages = [project]
 try:
     generate_python_skeleton = GimpDocumentationGenerator(OutputPythonSkeleton(
        file.relative_to(__file__, 'gimp'))
     )
     generate_python_skeleton()
+    packages.extend(['gimp', 'gimpenums', 'gimpfu'])
 except JSONDecodeError:
     # ignore error that occurs on some systems during generation
     print('WARNING: gimp documentation could not be generated', file=sys.stderr)
@@ -25,6 +27,6 @@ setup(
     author='Mathias Burger',
     author_email='mathias.burger@gmail.com',
     license='MIT',
-    packages=[project, 'gimp', 'gimpenums', 'gimpfu'],
+    packages=packages,
     zip_safe=False
 )
