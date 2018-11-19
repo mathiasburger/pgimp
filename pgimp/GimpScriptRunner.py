@@ -328,4 +328,17 @@ class GimpScriptRunner:
         return stdout_content
 
     def _parse(self, input: str) -> JsonType:
-        return json.loads(input.strip())
+        return json.loads(self._strip_gimp_warnings(input))
+
+    def _strip_gimp_warnings(self, input):
+        # workaround for gimp <2.8.22 that writes warnings to stdout instead of stderr
+        if input.startswith('(gimp:'):
+            lines = input.split('\n')
+            idx = 0
+            for line in lines:
+                if line.startswith('(gimp:') or line.strip() == '':
+                    idx += 1
+                else:
+                    break
+            input = '\n'.join(lines[idx:])
+        return input

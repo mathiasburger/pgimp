@@ -20,6 +20,8 @@ See `pgimp.GimpScriptRunnerTest.test_import_from_pgimp_library`.
 
 # Installation
 
+The package manager `pip` and the python `setuptools` are required.
+
 ## Operating system dependent infos
 
 ### Linux
