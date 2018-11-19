@@ -6,3 +6,4 @@
 ** replace file prefix pgimp.GimpFileCollection.GimpFileCollection#replace_path_components as well, not only path prefix and file suffix
 * newtype handling in pgimp.GimpFile.GimpFile#add_layer_from_file; copy mode, opacity and type from source layer unless specified otherwise
 * gimp file + collection: rename, reorder layer functionality
+* use find_packages from setuptools instead of listing packages manually
