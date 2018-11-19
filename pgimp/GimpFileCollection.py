@@ -533,6 +533,18 @@ class GimpFileCollection:
         """
         Create a collection of gimp files by pathname.
 
+        Example:
+
+        >>> from pgimp.GimpFileCollection import GimpFileCollection
+        >>> from tempfile import TemporaryDirectory
+        >>> import numpy as np
+        >>> with TemporaryDirectory('gfc') as tmpdir:
+        ...     gf1 = GimpFile(os.path.join(tmpdir, 'f1.xcf')).create('Background', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     gf2 = GimpFile(os.path.join(tmpdir, 'f2.xcf')).create('Foreground', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     gfc = GimpFileCollection.create_from_pathname(tmpdir)
+        ...     gfc.replace_prefix(gfc.get_prefix()).get_files()
+        ['f1.xcf', 'f2.xcf']
+
         :param pathname: Can be a file with or without .xcf suffix, directory or recursive directory search.
                          Allowed wildcards include '*' for matching zero or more characters
                          and '**' for recursive search.
@@ -554,4 +566,25 @@ class GimpFileCollection:
 
     @classmethod
     def create_from_gimp_files(cls, gimp_files: List[GimpFile]):
+        """
+        Create a collection of gimp files by a list of :py:class:`~pgimp.GimpFile.GimpFile`.
+
+        Example:
+
+        >>> from pgimp.GimpFileCollection import GimpFileCollection
+        >>> from tempfile import TemporaryDirectory
+        >>> import numpy as np
+        >>> with TemporaryDirectory('gfc') as tmpdir:
+        ...     gf1 = GimpFile(os.path.join(tmpdir, 'f1.xcf')).create('Background', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     gf2 = GimpFile(os.path.join(tmpdir, 'f2.xcf')).create('Foreground', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     gfc = GimpFileCollection.create_from_gimp_files([gf1, gf2])
+        ...     gfc.replace_prefix(gfc.get_prefix()).get_files()
+        ['f1.xcf', 'f2.xcf']
+
+        :param pathname: Can be a file with or without .xcf suffix, directory or recursive directory search.
+                         Allowed wildcards include '*' for matching zero or more characters
+                         and '**' for recursive search.
+        :return: A :py:class:`~pgimp.GimpFileCollection.GimpFileCollection` that contains an ordered list of filenames.
+        """
+
         return cls(list(map(lambda f: f.get_file(), gimp_files)))
