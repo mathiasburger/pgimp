@@ -1,21 +1,13 @@
 import sys
 from json import JSONDecodeError
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 from pgimp import __version__, project
 from pgimp.doc.GimpDocumentationGenerator import GimpDocumentationGenerator
 from pgimp.doc.output.OutputPythonSkeleton import OutputPythonSkeleton
 from pgimp.util import file
 
-packages = [
-    project,
-    f'{project}.doc',
-    f'{project}.doc.output',
-    f'{project}.gimp',
-    f'{project}.layers',
-    f'{project}.util'
-]
 try:
     generate_python_skeleton = GimpDocumentationGenerator(OutputPythonSkeleton(
        file.relative_to(__file__, 'gimp'))
@@ -34,6 +26,6 @@ setup(
     author='Mathias Burger',
     author_email='mathias.burger@gmail.com',
     license='MIT',
-    packages=packages,
+    packages=find_packages(),
     zip_safe=False
 )
