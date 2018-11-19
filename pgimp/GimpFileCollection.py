@@ -48,6 +48,8 @@ class GimpFileCollection:
         """
         Returns the list of files contained in the collection.
 
+        Example:
+
         >>> from pgimp.GimpFileCollection import GimpFileCollection
         >>> gfc = GimpFileCollection(['a.xcf', 'b.xcf'])
         >>> gfc.get_files()
@@ -60,6 +62,8 @@ class GimpFileCollection:
     def get_prefix(self) -> str:
         """
         Returns the common path prefix for all files including a trailing slash.
+
+        Example:
 
         >>> from pgimp.GimpFileCollection import GimpFileCollection
         >>> gfc = GimpFileCollection(['common/pre/dir/a.xcf', 'common/pre/files/b.xcf'])
@@ -81,6 +85,8 @@ class GimpFileCollection:
         """
         Returns a new collection with filenames where the old prefix is replaced by a new prefix.
 
+        Example:
+
         >>> from pgimp.GimpFileCollection import GimpFileCollection
         >>> gfc = GimpFileCollection(['common/pre/dir/a.xcf', 'common/pre/files/b.xcf'])
         >>> gfc.replace_prefix('common/pre', 'newpre').get_files()
@@ -96,6 +102,8 @@ class GimpFileCollection:
         """
         Returns a new collection with filenames that do not contain the suffix.
 
+        Example:
+
         >>> from pgimp.GimpFileCollection import GimpFileCollection
         >>> gfc = GimpFileCollection(['dir/a_tmp.xcf', 'files/b_tmp.xcf'])
         >>> gfc.replace_suffix('tmp', 'final').get_files()
@@ -110,6 +118,8 @@ class GimpFileCollection:
     def replace_path_components(self, prefix: str = '', new_prefix: str = '', suffix: str = '', new_suffix: str = '') -> 'GimpFileCollection':
         """
         Returns a new collection with replaced path components.
+
+        Example:
 
         >>> from pgimp.GimpFileCollection import GimpFileCollection
         >>> gfc = GimpFileCollection(['pre/filepre_a_suf.xcf', 'pre/filepre_b_suf.xcf'])
@@ -143,6 +153,8 @@ class GimpFileCollection:
         """
         Find files that contain a layer matching the predicate.
 
+        Example:
+
         >>> from pgimp.GimpFile import GimpFile
         >>> from pgimp.GimpFileCollection import GimpFileCollection
         >>> from pgimp.util.TempFile import TempFile
@@ -164,6 +176,8 @@ class GimpFileCollection:
     def find_files_containing_layer_by_name(self, layer_name: str, timeout_in_seconds: float=None) -> List[str]:
         """
         Find files that contain a layer that matching the given name.
+
+        Example:
 
         >>> from pgimp.GimpFile import GimpFile
         >>> from pgimp.GimpFileCollection import GimpFileCollection
@@ -209,6 +223,61 @@ class GimpFileCollection:
         **return_json(value)** in the form of a list is expected. This solution has better performance
         but you need to make sure that memory is cleaned up between opening files, e.g. by invoking
         **gimp_image_delete(image)**.
+
+        Example with script that is executed per file:
+
+        >>> from pgimp.GimpFile import GimpFile
+        >>> from pgimp.GimpFileCollection import GimpFileCollection
+        >>> from pgimp.util.TempFile import TempFile
+        >>> from pgimp.util.string import escape_single_quotes
+        >>> import numpy as np
+        >>> with TempFile('_bg.xcf') as f1, TempFile('_fg.xcf') as f2:  # doctest: +ELLIPSIS
+        ...     gf1 = GimpFile(f1).create('Background', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     gf2 = GimpFile(f2).create('Foreground', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     gfc = GimpFileCollection.create_from_gimp_files([gf1, gf2])
+        ...     script = textwrap.dedent(
+        ...         '''
+        ...         from pgimp.gimp.file import open_xcf
+        ...         from pgimp.gimp.parameter import return_bool
+        ...         image = open_xcf('__file__')
+        ...         for layer in image.layers:
+        ...             if layer.name == '{0:s}':
+        ...                 return_bool(True)
+        ...         return_bool(False)
+        ...         '''
+        ...     ).format(escape_single_quotes('Foreground'))
+        ...     gfc.find_files_by_script(script)
+        ['..._fg.xcf']
+
+        Example with script that is executed once on all files:
+
+        >>> from pgimp.GimpFile import GimpFile
+        >>> from pgimp.GimpFileCollection import GimpFileCollection
+        >>> from pgimp.util.TempFile import TempFile
+        >>> from pgimp.util.string import escape_single_quotes
+        >>> import numpy as np
+        >>> with TempFile('_bg.xcf') as f1, TempFile('_fg.xcf') as f2:  # doctest: +ELLIPSIS
+        ...     gf1 = GimpFile(f1).create('Background', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     gf2 = GimpFile(f2).create('Foreground', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     gfc = GimpFileCollection.create_from_gimp_files([gf1, gf2])
+        ...     script = textwrap.dedent(
+        ...         '''
+        ...         import gimp
+        ...         from pgimp.gimp.file import open_xcf
+        ...         from pgimp.gimp.parameter import return_json, get_json
+        ...         files = get_json('__files__')
+        ...         matches = []
+        ...         for file in files:
+        ...             image = open_xcf(file)
+        ...             for layer in image.layers:
+        ...                 if layer.name == '{0:s}':
+        ...                     matches.append(file)
+        ...             gimp.pdb.gimp_image_delete(image)
+        ...         return_json(matches)
+        ...         '''
+        ...     ).format(escape_single_quotes('Foreground'))
+        ...     gfc.find_files_by_script(script)
+        ['..._fg.xcf']
 
         :param script_predicate: Script to be executed.
         :param timeout_in_seconds: Script execution timeout in seconds.
