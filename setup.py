@@ -1,14 +1,21 @@
+import sys
+from json import JSONDecodeError
+
 from setuptools import setup
 
+from pgimp import __version__, project
 from pgimp.doc.GimpDocumentationGenerator import GimpDocumentationGenerator
 from pgimp.doc.output.OutputPythonSkeleton import OutputPythonSkeleton
 from pgimp.util import file
-from pgimp import __version__, project
 
-generate_python_skeleton = GimpDocumentationGenerator(OutputPythonSkeleton(
-   file.relative_to(__file__, 'gimp'))
-)
-generate_python_skeleton()
+try:
+    generate_python_skeleton = GimpDocumentationGenerator(OutputPythonSkeleton(
+       file.relative_to(__file__, 'gimp'))
+    )
+    generate_python_skeleton()
+except JSONDecodeError:
+    # ignore error that occurs on some systems during generation
+    print('WARNING: gimp documentation could not be generated', file=sys.stderr)
 
 setup(
     name=project,
