@@ -212,12 +212,12 @@ def test_find_files_by_script_with_script_that_takes_multiple_files():
         script = textwrap.dedent(
             """
             import gimp
-            from pgimp.gimp.image import XcfImage
+            from pgimp.gimp.file import XcfFile
             from pgimp.gimp.parameter import return_json, get_json
             files = get_json('__files__')
             matches = []
             for file in files:
-                with XcfImage(file) as image:
+                with XcfFile(file) as image:
                     for layer in image.layers:
                         if layer.name == '{0:s}':
                             matches.append(file)
@@ -310,7 +310,7 @@ def test_execute_script_and_return_json_with_script_that_takes_multiple_files_us
         assert with_white == files[0]
 
 
-def test_execute_script_and_return_json_with_script_that_takes_multiple_files_using_xcfimage():
+def test_execute_script_and_return_json_with_script_that_takes_multiple_files_using_xcf_file():
     with TempFile('.xcf') as with_white, TempFile('.xcf') as without_white:
         GimpFile(with_white)\
             .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8))\
@@ -325,12 +325,12 @@ def test_execute_script_and_return_json_with_script_that_takes_multiple_files_us
         script = textwrap.dedent(
             """
             import gimp
-            from pgimp.gimp.image import XcfImage
+            from pgimp.gimp.file import XcfFile
             from pgimp.gimp.parameter import return_json, get_json
             files = get_json('__files__')
             matches = []
             for file in files:
-                with XcfImage(file) as image:
+                with XcfFile(file) as image:
                     for layer in image.layers:
                         if layer.name == '{0:s}':
                             matches.append(file)

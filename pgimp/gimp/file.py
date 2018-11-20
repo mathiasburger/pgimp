@@ -35,3 +35,24 @@ def for_each_file(callback):
         image = open_xcf(file)
         callback(image, file)
         gimp.pdb.gimp_image_delete(image)
+
+
+class XcfFile:
+    def __init__(self, file, save=False):
+        """
+        :type file: str
+        :type save: bool
+        """
+        self._file = file
+        self._save = save
+        self._image = None
+
+    def __enter__(self):
+        self._image = open_xcf(self._file)
+        return self._image
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._save:
+            save_xcf(self._image, self._file)
+        close_image(self._image)
+        return False
