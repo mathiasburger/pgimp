@@ -196,17 +196,15 @@ class GimpFileCollection:
         """
         return self.find_files_by_script(textwrap.dedent(
             """
-            import gimp
-            from pgimp.gimp.file import open_xcf
             from pgimp.gimp.parameter import return_json, get_json
+            from pgimp.gimp.image import XcfImage
             files = get_json('__files__')
             matches = []
             for file in files:
-                image = open_xcf(file)
-                for layer in image.layers:
-                    if layer.name == '{0:s}':
-                        matches.append(file)
-                gimp.pdb.gimp_image_delete(image)
+                with XcfImage(file) as image:
+                    for layer in image.layers:
+                        if layer.name == '{0:s}':
+                            matches.append(file)
             return_json(matches)
             """
         ).format(escape_single_quotes(layer_name)), timeout_in_seconds=timeout_in_seconds)
@@ -263,16 +261,15 @@ class GimpFileCollection:
         ...     script = textwrap.dedent(
         ...         '''
         ...         import gimp
-        ...         from pgimp.gimp.file import open_xcf
+        ...         from pgimp.gimp.image import XcfImage
         ...         from pgimp.gimp.parameter import return_json, get_json
         ...         files = get_json('__files__')
         ...         matches = []
         ...         for file in files:
-        ...             image = open_xcf(file)
-        ...             for layer in image.layers:
-        ...                 if layer.name == '{0:s}':
-        ...                     matches.append(file)
-        ...             gimp.pdb.gimp_image_delete(image)
+        ...             with XcfImage(file) as image:
+        ...                 for layer in image.layers:
+        ...                     if layer.name == '{0:s}':
+        ...                         matches.append(file)
         ...         return_json(matches)
         ...         '''
         ...     ).format(escape_single_quotes('Foreground'))
@@ -355,16 +352,15 @@ class GimpFileCollection:
         ...     script = textwrap.dedent(
         ...         '''
         ...         import gimp
-        ...         from pgimp.gimp.file import open_xcf
+        ...         from pgimp.gimp.image import XcfImage
         ...         from pgimp.gimp.parameter import return_json, get_json
         ...         files = get_json('__files__')
         ...         matches = []
         ...         for file in files:
-        ...             image = open_xcf(file)
-        ...             for layer in image.layers:
-        ...                 if layer.name == '{0:s}':
-        ...                     matches.append(file)
-        ...             gimp.pdb.gimp_image_delete(image)
+        ...             with XcfImage(file) as image:
+        ...                 for layer in image.layers:
+        ...                     if layer.name == '{0:s}':
+        ...                         matches.append(file)
         ...         return_json(matches)
         ...         '''
         ...     ).format(escape_single_quotes('Foreground'))
@@ -487,11 +483,10 @@ class GimpFileCollection:
 
         script = textwrap.dedent(
             """
-            import gimp
             import os
-            from pgimp.gimp.file import open_xcf, save_xcf
             from pgimp.gimp.parameter import get_json, get_string, get_int, get_bool, return_json
             from pgimp.gimp.layer import copy_layer
+            from pgimp.gimp.image import XcfImage
             
             prefix_in_other_collection = get_string('prefix_in_other_collection')
             prefix_in_this_collection = get_string('prefix_in_this_collection')
@@ -506,12 +501,9 @@ class GimpFileCollection:
                 file_dst = os.path.join(prefix_in_this_collection, file)
                 if other_can_be_smaller and not os.path.exists(file_src):
                     continue
-                image_src = open_xcf(file_src)
-                image_dst = open_xcf(file_dst)
-                copy_layer(image_src, layer_name, image_dst, layer_name, layer_position)
-                save_xcf(image_dst, file_dst)
-                gimp.pdb.gimp_image_delete(image_src)
-                gimp.pdb.gimp_image_delete(image_dst)
+                
+                with XcfImage(file_src) as image_src, XcfImage(file_dst, save=True) as image_dst:
+                    copy_layer(image_src, layer_name, image_dst, layer_name, layer_position)
                 
             return_json(None)
             """
@@ -576,9 +568,8 @@ class GimpFileCollection:
 
         script = textwrap.dedent(
             """
-            import gimp
             import os
-            from pgimp.gimp.file import open_xcf, save_xcf
+            from pgimp.gimp.image import XcfImage
             from pgimp.gimp.parameter import get_json, get_string, get_int, return_json
             from pgimp.gimp.layer import merge_mask_layer
 
@@ -595,12 +586,8 @@ class GimpFileCollection:
                 file_dst = os.path.join(prefix_in_this_collection, file)
                 if not os.path.exists(file_src):
                     continue
-                image_src = open_xcf(file_src)
-                image_dst = open_xcf(file_dst)
-                merge_mask_layer(image_src, layer_name, image_dst, layer_name, mask_foreground_color, layer_position)
-                save_xcf(image_dst, file_dst)
-                gimp.pdb.gimp_image_delete(image_src)
-                gimp.pdb.gimp_image_delete(image_dst)
+                with XcfImage(file_src) as image_src, XcfImage(file_dst, save=True) as image_dst:
+                    merge_mask_layer(image_src, layer_name, image_dst, layer_name, mask_foreground_color, layer_position)
 
             return_json(None)
             """

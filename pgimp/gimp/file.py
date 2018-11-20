@@ -1,7 +1,6 @@
 from typing import Callable
 
 import gimp
-from gimp import Image
 from pgimp.gimp.parameter import get_json
 
 
@@ -21,8 +20,16 @@ def save_xcf(image, filename):
     gimp.pdb.gimp_xcf_save(0, image, None, filename, filename)
 
 
+def close_image(image):
+    """
+    :type image: gimp.Image
+    :return:
+    """
+    gimp.pdb.gimp_image_delete(image)
+
+
 def for_each_file(callback):
-    # type: (Callable[[Image, str], None]) -> None
+    # type: (Callable[[gimp.Image, str], None]) -> None
     files = get_json('__files__')
     for file in files:
         image = open_xcf(file)
