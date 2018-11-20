@@ -341,7 +341,7 @@ class GimpFileCollection:
         ...     gfc.execute_script_and_return_json(script)
         {'..._bg.xcf': False, '..._fg.xcf': True}
 
-        Example with script that is executed once on all files:
+        Example with script that is executed once on all files using open_xcf():
 
         >>> from pgimp.GimpFile import GimpFile
         >>> from pgimp.GimpFileCollection import GimpFileCollection
@@ -371,6 +371,36 @@ class GimpFileCollection:
         ...     gfc.execute_script_and_return_json(script)
         ['..._fg.xcf']
 
+        Example with script that is executed once on all files using for_each_file():
+
+        >>> from pgimp.GimpFile import GimpFile
+        >>> from pgimp.GimpFileCollection import GimpFileCollection
+        >>> from pgimp.util.TempFile import TempFile
+        >>> from pgimp.util.string import escape_single_quotes
+        >>> import numpy as np
+        >>> with TempFile('_bg.xcf') as f1, TempFile('_fg.xcf') as f2:  # doctest: +ELLIPSIS
+        ...     gf1 = GimpFile(f1).create('Background', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     gf2 = GimpFile(f2).create('Foreground', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     gfc = GimpFileCollection.create_from_gimp_files([gf1, gf2])
+        ...     script = textwrap.dedent(
+        ...         '''
+        ...         from pgimp.gimp.file import for_each_file
+        ...         from pgimp.gimp.parameter import return_json, get_json
+        ...
+        ...         matches = []
+        ...
+        ...         def layer_matches(image, file):
+        ...             for layer in image.layers:
+        ...                 if layer.name == '{0:s}':
+        ...                     matches.append(file)
+        ...
+        ...         for_each_file(layer_matches)
+        ...         return_json(matches)
+        ...         '''
+        ...     ).format(escape_single_quotes('Foreground'))
+        ...     gfc.execute_script_and_return_json(script)
+        ['..._fg.xcf']
+
         :param script: Script to be executed on the files.
         :param parameters: Parameters to pass to the script.
         :param timeout_in_seconds:  Script execution timeout in seconds.
@@ -384,7 +414,7 @@ class GimpFileCollection:
                 parameters=parameters,
                 timeout_in_seconds=timeout_in_seconds
             ) for file in self._files}
-        elif "get_json('__files__')" in script and "return_json(" in script:
+        elif ("get_json('__files__')" in script or "for_each_file(" in script) and "return_json(" in script:
             return self._gsr.execute_and_parse_json(
                 script,
                 parameters={**parameters, '__files__': self._files},
@@ -394,7 +424,7 @@ class GimpFileCollection:
             raise GimpMissingRequiredParameterException(
                 'Either an image file must be opened with open_xcf(\'__file__\') ' +
                 'and the result is returned with return_json() ' +
-                'or a list of files must be retrieved by get_json(\'__files__\') ' +
+                'or a list of files must be retrieved by get_json(\'__files__\') or for_each_file() ' +
                 'and the result is returned with return_json().'
             )
 

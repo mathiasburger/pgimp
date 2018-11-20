@@ -97,10 +97,10 @@ def test_replace_path_components():
     collection = collection.replace_path_components(prefix, '#', suffix, '%')
 
     assert [
-               '#first%',
-               '#second%',
-               '#a/third%',
-               '#a/b/fourth%',
+               '#first%.xcf',
+               '#second%.xcf',
+               '#a/third%.xcf',
+               '#a/b/fourth%.xcf',
            ] == collection.get_files()
 
 
@@ -277,7 +277,7 @@ def test_execute_script_and_return_json_with_script_that_takes_single_file():
                } == files
 
 
-def test_execute_script_and_return_json_with_script_that_takes_multiple_files():
+def test_execute_script_and_return_json_with_script_that_takes_multiple_files_using_open():
     with TempFile('.xcf') as with_white, TempFile('.xcf') as without_white:
         GimpFile(with_white)\
             .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8))\
@@ -307,6 +307,41 @@ def test_execute_script_and_return_json_with_script_that_takes_multiple_files():
         )
 
         files = collection.execute_script_and_return_json(script.format(escape_single_quotes('White')), timeout_in_seconds=3)
+        assert len(files) == 1
+        assert with_white == files[0]
+
+
+def test_execute_script_and_return_json_with_script_that_takes_multiple_files_using_for_each():
+    with TempFile('.xcf') as with_white, TempFile('.xcf') as without_white:
+        GimpFile(with_white) \
+            .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8)) \
+            .add_layer_from_numpy('White', np.ones(shape=(1, 1), dtype=np.uint8) * 255)
+
+        GimpFile(without_white) \
+            .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8)) \
+            .add_layer_from_numpy('Black', np.zeros(shape=(1, 1), dtype=np.uint8))
+
+        collection = GimpFileCollection([with_white, without_white])
+
+        script = textwrap.dedent(
+            """
+            from pgimp.gimp.file import for_each_file
+            from pgimp.gimp.parameter import return_json, get_json
+
+            matches = []
+
+            def layer_matches(image, file):
+                for layer in image.layers:
+                    if layer.name == '{0:s}':
+                        matches.append(file)
+
+            for_each_file(layer_matches)
+            return_json(matches)
+            """
+        )
+
+        files = collection.execute_script_and_return_json(script.format(escape_single_quotes('White')),
+                                                          timeout_in_seconds=3)
         assert len(files) == 1
         assert with_white == files[0]
 
