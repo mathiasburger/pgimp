@@ -49,9 +49,9 @@ class XcfFile:
         return False
 
 
-def for_each_file(callback):
-    # type: (Callable[[gimp.Image, str], None]) -> None
+def for_each_file(callback, save=False):
+    # type: (Callable[[gimp.Image, str], None], bool) -> None
     files = get_json('__files__')
     for file in files:
-        with XcfFile(file) as image:
+        with XcfFile(file, save=save) as image:
             callback(image, file)
