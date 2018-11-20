@@ -28,15 +28,6 @@ def close_image(image):
     gimp.pdb.gimp_image_delete(image)
 
 
-def for_each_file(callback):
-    # type: (Callable[[gimp.Image, str], None]) -> None
-    files = get_json('__files__')
-    for file in files:
-        image = open_xcf(file)
-        callback(image, file)
-        gimp.pdb.gimp_image_delete(image)
-
-
 class XcfFile:
     def __init__(self, file, save=False):
         """
@@ -56,3 +47,11 @@ class XcfFile:
             save_xcf(self._image, self._file)
         close_image(self._image)
         return False
+
+
+def for_each_file(callback):
+    # type: (Callable[[gimp.Image, str], None]) -> None
+    files = get_json('__files__')
+    for file in files:
+        with XcfFile(file) as image:
+            callback(image, file)
