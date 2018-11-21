@@ -378,7 +378,7 @@ class GimpFile:
             from pgimp.gimp.layer import add_layer_from_numpy
 
             with XcfFile('{2:s}', save=True) as image:
-                add_layer_from_numpy(image, '{5:s}', '{4:s}', {0:d}, {1:d}, {8:d}, float({7:s}), {3:d}, gimpenums.NORMAL_MODE, {6:s})
+                add_layer_from_numpy(image, '{5:s}', '{4:s}', {0:d}, {1:d}, {3:d}, {8:d}, float({7:s}), gimpenums.NORMAL_MODE, {6:s})
             """
         ).format(
             width,
