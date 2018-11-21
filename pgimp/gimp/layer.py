@@ -108,3 +108,26 @@ def merge_mask_layer(image_src, layer_name_src, image_dst, layer_name_dst, mask_
 
     layer_dst.get_pixel_rgn(0, 0, layer_dst.width, layer_dst.height)[:, :] = content_merged.tobytes()
     reorder_layer(image_dst, layer_dst, position_dst)
+
+
+def add_layer_from_numpy(image, numpy_file, name, width, height, position, opacity, type, mode, visible):
+    """
+    :type image: gimp.Image
+    :type numpy_file: str
+    :type name: strImage
+    :type width: int
+    :type height: int
+    :type position: int
+    :type opacity: float
+    :type type: int
+    :type mode: int
+    :type visible: bool
+    """
+    layer = gimp.pdb.gimp_layer_new(image, width, height, type, name, opacity, mode)
+    layer.visible = visible
+    array = np.load(numpy_file)
+    bytes = np.uint8(array).tobytes()
+    region = layer.get_pixel_rgn(0, 0, layer.width, layer.height, True)
+    region[:, :] = bytes
+
+    gimp.pdb.gimp_image_add_layer(image, layer, position)

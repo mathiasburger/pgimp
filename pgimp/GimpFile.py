@@ -373,22 +373,12 @@ class GimpFile:
 
         code = textwrap.dedent(
             """
-            import gimp
             import gimpenums
-            import numpy as np
-            from pgimp.gimp.file import open_xcf, save_xcf
+            from pgimp.gimp.file import XcfFile
+            from pgimp.gimp.layer import add_layer_from_numpy
 
-            image = open_xcf('{2:s}')
-            layer = gimp.pdb.gimp_layer_new(image, {0:d}, {1:d}, {3:d}, '{4:s}', 100, gimpenums.NORMAL_MODE)
-            layer.visible = {6:s}
-            layer.opacity = float({7:s})
-            array = np.load('{5:s}')
-            bytes = np.uint8(array).tobytes()
-            region = layer.get_pixel_rgn(0, 0, layer.width, layer.height, True)
-            region[: ,:] = bytes
-
-            gimp.pdb.gimp_image_add_layer(image, layer, {8:d})
-            save_xcf(image, '{2:s}')
+            with XcfFile('{2:s}', save=True) as image:
+                add_layer_from_numpy(image, '{5:s}', '{4:s}', {0:d}, {1:d}, {8:d}, float({7:s}), {3:d}, gimpenums.NORMAL_MODE, {6:s})
             """
         ).format(
             width,

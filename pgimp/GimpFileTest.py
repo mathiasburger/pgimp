@@ -49,7 +49,7 @@ def test_create():
     assert np.all(layer_bg == actual)
 
 
-def test_numpy_to_layer():
+def test_add_layer_from_numpy():
     tmp_file = tempfile.mktemp(suffix='.xcf')
     layer_bg = np.array([
         [[255, 255, 255], [0, 0, 0], [255, 255, 255]],
