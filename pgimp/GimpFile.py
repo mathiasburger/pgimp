@@ -100,18 +100,11 @@ class GimpFile:
         code = textwrap.dedent(
             """
             import gimp
-            import gimpenums
-            import numpy as np
             from pgimp.gimp.file import save_xcf
-            
+            from pgimp.gimp.layer import add_layer_from_numpy
+
             image = gimp.pdb.gimp_image_new({0:d}, {1:d}, {2:d})
-            layer = gimp.pdb.gimp_layer_new(image, image.width, image.height, {4:d}, '{5:s}', 100, gimpenums.NORMAL_MODE)
-            array = np.load('{6:s}')
-            bytes = np.uint8(array).tobytes()
-            region = layer.get_pixel_rgn(0, 0, layer.width, layer.height, True)
-            region[: ,:] = bytes
-            
-            gimp.pdb.gimp_image_add_layer(image, layer, 0)
+            add_layer_from_numpy(image, '{6:s}', '{5:s}', image.width, image.height, {4:d})
             save_xcf(image, '{3:s}')
             """
         ).format(
@@ -210,10 +203,10 @@ class GimpFile:
         code = textwrap.dedent(
             """
             import gimp
-            import numpy as np
             import gimpenums
-            from pgimp.gimp.file import open_xcf, save_xcf
-            from pgimp.gimp.colormap import *
+            from pgimp.gimp.file import save_xcf
+            from pgimp.gimp.colormap import *  # necessary for predefined colormaps
+            from pgimp.gimp.layer import add_layer_from_numpy
         
             cmap = {0:s}
             image = gimp.pdb.gimp_image_new({1:d}, {2:d}, gimpenums.GRAY)
@@ -222,13 +215,7 @@ class GimpFile:
                 gimp.pdb.gimp_palette_add_entry(palette_name, str(i), (int(cmap[i][0]), int(cmap[i][1]), int(cmap[i][2])))
             gimp.pdb.gimp_convert_indexed(image, gimpenums.NO_DITHER, gimpenums.CUSTOM_PALETTE, 256, False, False, palette_name)
             
-            layer = gimp.pdb.gimp_layer_new(image, image.width, image.height, gimpenums.INDEXED_IMAGE, '{4:s}', 100, gimpenums.NORMAL_MODE)
-            array = np.load('{5:s}')
-            bytes = np.uint8(array).tobytes()
-            region = layer.get_pixel_rgn(0, 0, layer.width, layer.height)
-            region[: ,:] = bytes
-            gimp.pdb.gimp_image_add_layer(image, layer, 0)
-        
+            add_layer_from_numpy(image, '{5:s}', '{4:s}', image.width, image.height, gimpenums.INDEXED_IMAGE)
             save_xcf(image, '{3:s}')
             """
         ).format(
