@@ -155,6 +155,15 @@ def merge_mask_layer(image_src, layer_name_src, image_dst, layer_name_dst, mask_
     reorder_layer(image_dst, layer_dst, position_dst)
 
 
+def remove_layer(image, layer_name):
+    """
+    :type image: gimp.Image
+    :type layer_name: str
+    """
+    layer = gimp.pdb.gimp_image_get_layer_by_name(image, layer_name)
+    gimp.pdb.gimp_image_remove_layer(image, layer)
+
+
 def add_layer_from_numpy(image, numpy_file, name, width, height, type, position=0, opacity=100., mode=gimpenums.NORMAL_MODE, visible=True):
     """
     :type image: gimp.Image

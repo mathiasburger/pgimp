@@ -498,7 +498,7 @@ class GimpFile:
         """
         code = textwrap.dedent(
             """
-            from pgimp.gimp.file import open_xcf, save_xcf
+            from pgimp.gimp.file import open_xcf
             from pgimp.gimp.parameter import return_json
             
             image = open_xcf('{0:s}')
@@ -540,13 +540,11 @@ class GimpFile:
         """
         code = textwrap.dedent(
             """
-            import gimp
-            from pgimp.gimp.file import open_xcf, save_xcf
+            from pgimp.gimp.file import XcfFile
+            from pgimp.gimp.layer import remove_layer
 
-            image = open_xcf('{0:s}')
-            layer = gimp.pdb.gimp_image_get_layer_by_name(image, '{1:s}')
-            gimp.pdb.gimp_image_remove_layer(image, layer)
-            save_xcf(image, '{0:s}')
+            with XcfFile('{0:s}', save=True) as image:
+                remove_layer(image, '{1:s}')
             """
         ).format(escape_single_quotes(self._file), escape_single_quotes(layer_name))
 
