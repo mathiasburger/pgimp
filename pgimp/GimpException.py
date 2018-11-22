@@ -9,7 +9,7 @@ class GimpException(Exception):
     >>> try:
     ...     GimpScriptRunner().execute('1/0')
     ... except Exception as e:
-    ...     print(str(e).split('\\n')[-2])
-    ZeroDivisionError: integer division or modulo by zero
+    ...     str(e).split('\\n')[-2]
+    'ZeroDivisionError: integer division or modulo by zero'
     """
     pass
