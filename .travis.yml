@@ -5,7 +5,7 @@ python:
 before_install:
   - sudo apt-get update
   - sudo apt-get install -y xvfb gimp python python-pip
-  - pip2 install numpy typing
+  - sudo pip2 install numpy typing
 install:
   - pip install pytest setuptools
   - pip install -e .
