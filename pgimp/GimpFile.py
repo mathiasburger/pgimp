@@ -301,19 +301,12 @@ class GimpFile:
         """
         bytes = self._gsr.execute_binary(textwrap.dedent(
             """
-            import gimp
             import numpy as np
             import sys
             from pgimp.gimp.file import open_xcf
+            from pgimp.gimp.layer import convert_layer_to_numpy
 
-            image = open_xcf('{0:s}')
-            layer_name = '{1:s}'
-            layer = gimp.pdb.gimp_image_get_layer_by_name(image, layer_name)
-            region = layer.get_pixel_rgn(0, 0, layer.width,layer.height)
-            buffer = region[:, :]
-            bpp = region.bpp
-            np_buffer = np.frombuffer(buffer, dtype=np.uint8).reshape((layer.height, layer.width, bpp))
-
+            np_buffer = convert_layer_to_numpy(open_xcf('{0:s}'), '{1:s}')
             np.save(sys.stdout, np_buffer)
             """
         ).format(

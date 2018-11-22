@@ -131,3 +131,17 @@ def add_layer_from_numpy(image, numpy_file, name, width, height, type, position=
     region[:, :] = bytes
 
     gimp.pdb.gimp_image_add_layer(image, layer, position)
+
+
+def convert_layer_to_numpy(image, layer_name):
+    """
+    :type image: gimp.Image 
+    :param layer_name: str
+    :rtype: np.ndarray 
+    """
+    layer = gimp.pdb.gimp_image_get_layer_by_name(image, layer_name)
+    region = layer.get_pixel_rgn(0, 0, layer.width, layer.height)
+    buffer = region[:, :]
+    bpp = region.bpp
+    np_buffer = np.frombuffer(buffer, dtype=np.uint8).reshape((layer.height, layer.width, bpp))
+    return np_buffer
