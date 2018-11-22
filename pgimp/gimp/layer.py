@@ -4,15 +4,30 @@ import gimp
 import gimpenums
 
 
-def copy_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_dst=0):
+class LayerException(Exception):
+    pass
+
+
+class LayerExistsException(LayerException):
+    pass
+
+
+class LayerDoesNotExistException(LayerException):
+    pass
+
+
+def copy_or_merge_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_dst=0):
     """
     :type image_src: gimp.Image
     :type layer_name_src: str
     :type image_dst: gimp.Image
     :type layer_name_dst: str
     :type position_dst: int
+    :type merge: bool
     """
     layer_src = gimp.pdb.gimp_image_get_layer_by_name(image_src, layer_name_src)
+    if layer_src is None:
+        raise LayerDoesNotExistException('Missing source layer ' + layer_name_src + '.')
     layer_dst = gimp.pdb.gimp_image_get_layer_by_name(image_dst, layer_name_dst)
     if layer_dst is None:
         layer_dst = gimp.pdb.gimp_layer_new(
@@ -30,6 +45,36 @@ def copy_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_ds
     layer_floating = gimp.pdb.gimp_edit_paste(layer_dst, True)
     gimp.pdb.gimp_floating_sel_anchor(layer_floating)
     reorder_layer(image_dst, layer_dst, position_dst)
+
+
+def copy_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_dst=0):
+    """
+    :type image_src: gimp.Image
+    :type layer_name_src: str
+    :type image_dst: gimp.Image
+    :type layer_name_dst: str
+    :type position_dst: int
+    :type merge: bool
+    """
+    layer_dst = gimp.pdb.gimp_image_get_layer_by_name(image_dst, layer_name_dst)
+    if layer_dst is not None:
+        raise LayerExistsException('Destination layer ' + layer_name_dst + ' already exists.')
+    copy_or_merge_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_dst)
+
+
+def merge_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_dst=0):
+    """
+    :type image_src: gimp.Image
+    :type layer_name_src: str
+    :type image_dst: gimp.Image
+    :type layer_name_dst: str
+    :type position_dst: int
+    :type merge: bool
+    """
+    layer_dst = gimp.pdb.gimp_image_get_layer_by_name(image_dst, layer_name_dst)
+    if layer_dst is None:
+        raise LayerDoesNotExistException('Destination layer ' + layer_name_dst + ' does not exist.')
+    copy_or_merge_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_dst)
 
 
 def reorder_layer(image, layer, position):
@@ -135,9 +180,9 @@ def add_layer_from_numpy(image, numpy_file, name, width, height, type, position=
 
 def convert_layer_to_numpy(image, layer_name):
     """
-    :type image: gimp.Image 
+    :type image: gimp.Image
     :param layer_name: str
-    :rtype: np.ndarray 
+    :rtype: np.ndarray
     """
     layer = gimp.pdb.gimp_image_get_layer_by_name(image, layer_name)
     region = layer.get_pixel_rgn(0, 0, layer.width, layer.height)

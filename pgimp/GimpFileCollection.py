@@ -485,7 +485,7 @@ class GimpFileCollection:
             """
             import os
             from pgimp.gimp.parameter import get_json, get_string, get_int, get_bool, return_json
-            from pgimp.gimp.layer import copy_layer
+            from pgimp.gimp.layer import copy_or_merge_layer
             from pgimp.gimp.file import XcfFile
             
             prefix_in_other_collection = get_string('prefix_in_other_collection')
@@ -503,7 +503,7 @@ class GimpFileCollection:
                     continue
                 
                 with XcfFile(file_src) as image_src, XcfFile(file_dst, save=True) as image_dst:
-                    copy_layer(image_src, layer_name, image_dst, layer_name, layer_position)
+                    copy_or_merge_layer(image_src, layer_name, image_dst, layer_name, layer_position)
                 
             return_json(None)
             """
