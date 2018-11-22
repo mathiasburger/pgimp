@@ -2,6 +2,8 @@
 
 Call gimp routines from python3 code.
 
+[![Build Status](https://travis-ci.org/mabu-github/pgimp.svg?branch=master)](https://travis-ci.org/mabu-github/pgimp)
+
 ## Create skeletons for gimp python autocompletion
 
 When writing scripts to be executed within gimp, it is useful to have IDE autocompletion. `GimpDocumentationGenerator` 
