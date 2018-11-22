@@ -335,6 +335,17 @@ class GimpScriptRunner:
         else:
             stderr_content = strip_gimp_warnings(stderr.decode())
 
+        # gimp prior to 2.8.22 writes plugin's stderr to stdout
+        if binary:
+            stdout_with_possible_errors = strip_gimp_warnings(stdout.decode('latin1'))
+        if not output_stream:
+            if not binary:
+                stdout_with_possible_errors = stdout_content
+            if stdout_with_possible_errors.strip().split('\n')[-1].startswith('__GIMP_SCRIPT_ERROR__'):
+                if binary:  # convert to utf8 because output is error and should not be binary
+                    stdout_with_possible_errors = stdout_with_possible_errors.encode('latin1').decode()
+                stderr_content = stdout_with_possible_errors
+
         if stderr_content:
             error_lines = stderr_content.strip().split('\n')
             if error_lines[-1].startswith('__GIMP_SCRIPT_ERROR__'):
