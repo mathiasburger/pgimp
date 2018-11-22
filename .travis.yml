@@ -2,6 +2,9 @@ dist: xenial
 language: python
 python:
   - "3.6"
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install -y xvfb gimp
 install:
   - pip install pytest setuptools
 script:
