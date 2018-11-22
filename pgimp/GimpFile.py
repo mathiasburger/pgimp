@@ -431,17 +431,11 @@ class GimpFile:
         """
         code = textwrap.dedent(
             """
-            import gimp
-            import gimpenums
             from pgimp.gimp.file import XcfFile
+            from pgimp.gimp.layer import copy_layer
             
             with XcfFile('{1:s}') as image_src, XcfFile('{0:s}', save=True) as image_dst:
-                layer_src = gimp.pdb.gimp_image_get_layer_by_name(image_src, '{3:s}')
-                layer_dst = gimp.pdb.gimp_layer_new(image_dst, layer_src.width, layer_src.height, {4:d}, '{2:s}', 100, gimpenums.NORMAL_MODE)
-                gimp.pdb.gimp_image_add_layer(image_dst, layer_dst, {5:d})
-                gimp.pdb.gimp_edit_copy(layer_src)
-                layer_floating = gimp.pdb.gimp_edit_paste(layer_dst, True)
-                gimp.pdb.gimp_floating_sel_anchor(layer_floating)
+                copy_layer(image_src, '{3:s}', image_dst, '{2:s}', 5)
             """
         ).format(
             escape_single_quotes(self._file),
@@ -482,18 +476,11 @@ class GimpFile:
         """
         code = textwrap.dedent(
             """
-            import gimp
-            import gimpenums
-            from pgimp.gimp.file import open_xcf, save_xcf
+            from pgimp.gimp.file import XcfFile
+            from pgimp.gimp.layer import merge_layer
 
-            image_dst = open_xcf('{0:s}')
-            image_src = open_xcf('{1:s}')
-            layer_src = gimp.pdb.gimp_image_get_layer_by_name(image_src, '{2:s}')
-            layer_dst = gimp.pdb.gimp_image_get_layer_by_name(image_dst, '{2:s}')
-            gimp.pdb.gimp_edit_copy(layer_src)
-            layer_floating = gimp.pdb.gimp_edit_paste(layer_dst, True)
-            gimp.pdb.gimp_floating_sel_anchor(layer_floating)
-            save_xcf(image_dst, '{0:s}')
+            with XcfFile('{1:s}') as image_src, XcfFile('{0:s}', save=True) as image_dst:
+                merge_layer(image_src, '{2:s}', image_dst, '{2:s}', 0)
             """
         ).format(
             escape_single_quotes(self._file),
