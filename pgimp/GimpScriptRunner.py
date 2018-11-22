@@ -344,8 +344,9 @@ class GimpScriptRunner:
                 raise GimpScriptException(error_string)
 
         if binary:
-            # gimp warnings can be mixed with byte content, use ascii because it is a bytewise encoding
-            return strip_gimp_warnings(stdout.decode('ascii')).encode('ascii')
+            # gimp warnings can be mixed with byte content, use latin1 because it is a bytewise encoding
+            # that extends ascii (ascii is only 0 to 127); gimp warnings should only contain ascii characters
+            return strip_gimp_warnings(stdout.decode('latin1')).encode('latin1')
         if output_stream:
             return None
         return strip_gimp_warnings(stdout_content)

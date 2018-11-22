@@ -13,11 +13,6 @@ rgb_file = GimpFile(file.relative_to(__file__, 'test-resources/rgb.xcf'))
 The file rgb.xcf contains a 3x2 image with white 'Background' layer and 'Red', 'Green', 'Blue' layers with differing 
 opacity. The layer 'Background' contains a black pixel at y=0, x=1, the others pixels are white.
 """
-black_and_yellow_file = GimpFile(file.relative_to(__file__, 'test-resources/black_and_yellow.xcf'))
-"""
-The 3x2 image file black_and_yellow.xcf contains a 'Background' layer that is black and a 'Yellow' layer that is 
-yellow rgb(240, 255, 0).
-"""
 
 
 def test_layer_to_numpy():
@@ -74,39 +69,49 @@ def test_add_layer_from_numpy():
 
 
 def test_add_layer_from_file():
-    tmp_file = tempfile.mktemp(suffix='.xcf')
-    layer_bg = np.array([
-        [[255, 255, 255], [0, 0, 0], [255, 255, 255]],
-        [[255, 255, 255], [255, 255, 255], [255, 255, 255]],
-    ], dtype=np.uint8)
-    position = 1
+    with TempFile('.xcf') as dst, TempFile('.xcf') as src:
+        layer_bg = np.array([
+            [[255, 255, 255], [0, 0, 0], [255, 255, 255]],
+            [[255, 255, 255], [255, 255, 255], [255, 255, 255]],
+        ], dtype=np.uint8)
+        position = 1
 
-    gimp_file = GimpFile(tmp_file)
-    gimp_file.create('Background', layer_bg)
-    gimp_file.add_layer_from_file(black_and_yellow_file, 'Yellow', new_name='Yellow (copied)', new_position=position)
+        src_file = GimpFile(src)
+        src_file.create('Background', np.zeros(shape=(2, 3, 3), dtype=np.uint8))
+        src_file.add_layer_from_numpy('Yellow', np.array([
+            [[240, 255, 0], [240, 255, 0], [240, 255, 0]],
+            [[240, 255, 0], [240, 255, 0], [240, 255, 0]],
+        ], dtype=np.uint8))
 
-    assert 'Yellow (copied)' == gimp_file.layers()[position].name
-    assert np.all([240, 255, 0] == gimp_file.layer_to_numpy('Yellow (copied)'))
+        dst_file = GimpFile(dst)
+        dst_file.create('Background', layer_bg)
+        dst_file.add_layer_from_file(src_file, 'Yellow', new_name='Yellow (copied)', new_position=position)
 
-    os.remove(tmp_file)
+        assert 'Yellow (copied)' == dst_file.layers()[position].name
+        assert np.all([240, 255, 0] == dst_file.layer_to_numpy('Yellow (copied)'))
 
 
 def test_merge_layer_from_file():
-    tmp_file = tempfile.mktemp(suffix='.xcf')
-    layer_bg = np.array([
-        [[255, 255, 255], [0, 0, 0], [255, 255, 255]],
-        [[255, 255, 255], [255, 255, 255], [255, 255, 255]],
-    ], dtype=np.uint8)
+    with TempFile('.xcf') as dst, TempFile('.xcf') as src:
+        layer_bg = np.array([
+            [[255, 255, 255], [0, 0, 0], [255, 255, 255]],
+            [[255, 255, 255], [255, 255, 255], [255, 255, 255]],
+        ], dtype=np.uint8)
 
-    gimp_file = GimpFile(tmp_file)
-    gimp_file.create('Yellow', layer_bg)
-    gimp_file.merge_layer_from_file(black_and_yellow_file, 'Yellow')
+        src_file = GimpFile(src)
+        src_file.create('Background', np.zeros(shape=(2, 3, 3), dtype=np.uint8))
+        src_file.add_layer_from_numpy('Yellow', np.array([
+            [[240, 255, 0], [240, 255, 0], [240, 255, 0]],
+            [[240, 255, 0], [240, 255, 0], [240, 255, 0]],
+        ], dtype=np.uint8))
 
-    new_layer_contents = gimp_file.layer_to_numpy('Yellow')
+        dst_file = GimpFile(dst)
+        dst_file.create('Yellow', layer_bg)
+        dst_file.merge_layer_from_file(src_file, 'Yellow')
 
-    os.remove(tmp_file)
+        new_layer_contents = dst_file.layer_to_numpy('Yellow')
 
-    assert np.all([240, 255, 0] == new_layer_contents)
+        assert np.all([240, 255, 0] == new_layer_contents)
 
 
 def test_layers():
