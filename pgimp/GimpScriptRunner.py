@@ -365,5 +365,5 @@ class GimpScriptRunner:
     def _parse(self, input: str) -> JsonType:
         try:
             return json.loads(input)
-        except JSONDecodeError:
-            raise GimpScriptException('The following JSON could not be parsed:\n' + input)
+        except JSONDecodeError as e:
+            raise GimpScriptException('The following JSON could not be parsed:\n>>>' + input + '<<<\nOriginal decoding error:\n' + str(e))
