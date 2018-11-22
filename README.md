@@ -22,9 +22,8 @@ See `pgimp.GimpScriptRunnerTest.test_import_from_pgimp_library`.
 
 # Installation
 
-The package manager `pip` and the python `setuptools` are required.
-
-Needs gimp >=2.8.22 because previous versions write their warnings to stdout instead of stderr.
+The package manager `pip` and the python `setuptools` are required. As gimp uses a python2 interpreter, 
+the pip packages `numpy` and `typing` for python2 need to be installed.
 
 ## Operating system dependent infos
 

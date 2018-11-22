@@ -4,9 +4,10 @@ python:
   - "3.6"
 before_install:
   - sudo apt-get update
-  - sudo apt-get install -y xvfb gimp
+  - sudo apt-get install -y xvfb gimp python python-pip
+  - pip2 install numpy typing
 install:
   - pip install pytest setuptools
   - pip install -e .
 script:
-  - pytest -c pytest.ini pgimp
+  - pytest -c pytest.ini --maxfail=2 pgimp
