@@ -1,0 +1,8 @@
+dist: xenial
+language: python
+python:
+  - "3.6"
+install:
+  - pip install pytest setuptools
+script:
+  - pytest -c pytest.ini pgimp
