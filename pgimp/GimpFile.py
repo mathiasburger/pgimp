@@ -252,13 +252,9 @@ class GimpFile:
         """
         code = textwrap.dedent(
             """
-            import gimp
-            from pgimp.gimp.file import open_xcf, save_xcf
-            image = open_xcf('{0:s}')
-            width = image.width
-            height = image.height
-            type = image.base_type
-            image = gimp.pdb.gimp_image_new(width, height, type)
+            from pgimp.gimp.file import save_xcf
+            from pgimp.gimp.image import create_from_template_file
+            image = create_from_template_file('{0:s}')
             save_xcf(image, '{1:s}')
             """
         ).format(escape_single_quotes(other_file._file), escape_single_quotes(self._file))
