@@ -3,6 +3,7 @@ import tempfile
 from io import FileIO
 from tempfile import mktemp
 
+import numpy as np
 import pytest
 
 from pgimp.GimpScriptRunner import GimpScriptRunner, GimpScriptException, GimpScriptExecutionTimeoutException, \
@@ -113,6 +114,15 @@ def test_execute_with_error_stream():
         assert fh.read().endswith('__GIMP_SCRIPT_ERROR__ 1')
 
     os.remove(tmpfile)
+
+
+def test_execute_binary():
+    arr = np.frombuffer(GimpScriptRunner().execute_binary(
+        "from pgimp.gimp.parameter import *; import sys; sys.stdout.write(get_bytes('arr'))",
+        parameters = {"arr": np.array([i for i in range(0, 3)], dtype=np.uint8).tobytes()}),
+        dtype=np.uint8
+    )
+    assert np.all([0, 1, 2] == arr)
 
 
 def test_strip_gimp_warnings():

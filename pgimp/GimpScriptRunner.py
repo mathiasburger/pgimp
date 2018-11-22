@@ -343,6 +343,11 @@ class GimpScriptRunner:
                     error_string = error_string.replace('File "<string>"', 'File "{:s}"'.format(self._file_to_execute), 1)
                 raise GimpScriptException(error_string)
 
+        if binary:
+            # gimp warnings can be mixed with byte content, use ascii because it is a bytewise encoding
+            return strip_gimp_warnings(stdout.decode('ascii')).encode('ascii')
+        if output_stream:
+            return None
         return strip_gimp_warnings(stdout_content)
 
     def _parse(self, input: str) -> JsonType:
