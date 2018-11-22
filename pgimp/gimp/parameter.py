@@ -80,7 +80,6 @@ def return_json(obj):
     :type obj: None or bool or int or float or str or list or dict
     """
     json.dump(obj, sys.stdout)
-    sys.stdout.flush()
     gimp.pdb.gimp_quit(0)
 
 
@@ -89,5 +88,4 @@ def return_bool(bool):
     :param bool: bool
     """
     print('true' if bool else 'false')
-    sys.stdout.flush()
     gimp.pdb.gimp_quit(0)

@@ -312,7 +312,7 @@ class GimpScriptRunner:
 
         initializer = file.get_content(file.relative_to(__file__, 'gimp/initializer.py')) + '\n'
         extend_path = "sys.path.append('{:s}')\n".format(os.path.dirname(os.path.dirname(__file__)))
-        quit_gimp = '\nsys.stdout.flush()\nsys.stderr.flush()\npdb.gimp_quit(0)'
+        quit_gimp = '\npdb.gimp_quit(0)'
 
         code = initializer + extend_path + code + quit_gimp
 
