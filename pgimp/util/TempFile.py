@@ -3,7 +3,6 @@ import tempfile
 
 
 class TempFile:
-
     def __init__(self, suffix='', prefix=tempfile.template) -> None:
         super().__init__()
         self._file = None

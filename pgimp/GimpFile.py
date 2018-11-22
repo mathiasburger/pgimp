@@ -59,6 +59,7 @@ class GimpFile:
     ...     gimp_file.layer_names()
     ['Background']
     """
+
     def __init__(self, file: str) -> None:
         super().__init__()
         self._file = file
@@ -527,6 +528,18 @@ class GimpFile:
         """
         Returns the names of the layers in the gimp file.
 
+        Example:
+
+        >>> from pgimp.GimpFile import GimpFile
+        >>> from pgimp.util.TempFile import TempFile
+        >>> import numpy as np
+        >>> with TempFile('.xcf') as file:
+        ...     gimp_file = GimpFile(file) \\
+        ...         .create('Background', np.zeros(shape=(2, 2), dtype=np.uint8)) \\
+        ...         .add_layer_from_numpy('Black', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     gimp_file.layer_names()
+        ['Black', 'Background']
+
         :return: List of layer names.
         """
         return list(map(lambda l: l.name, self.layers()))
@@ -534,6 +547,19 @@ class GimpFile:
     def remove_layer(self, layer_name: str) -> 'GimpFile':
         """
         Removes a layer from the gimp file.
+
+        Example:
+
+        >>> from pgimp.GimpFile import GimpFile
+        >>> from pgimp.util.TempFile import TempFile
+        >>> import numpy as np
+        >>> with TempFile('.xcf') as file:
+        ...     gimp_file = GimpFile(file) \\
+        ...         .create('Background', np.zeros(shape=(2, 2), dtype=np.uint8)) \\
+        ...         .add_layer_from_numpy('Black', np.zeros(shape=(2, 2), dtype=np.uint8)) \\
+        ...         .remove_layer('Background')
+        ...     gimp_file.layer_names()
+        ['Black']
 
         :param layer_name: Name of the layer to remove.
         :return: :py:class:`~pgimp.GimpFile.GimpFile`
