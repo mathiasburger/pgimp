@@ -87,7 +87,6 @@ def is_xvfb_present():
 
 
 def strip_gimp_warnings(input):
-    # workaround for gimp <2.8.22 that writes warnings to stdout instead of stderr
     if input.startswith('\n(gimp:'):
         to_find = '\n\n(gimp:'
         pos = 0
@@ -334,7 +333,7 @@ class GimpScriptRunner:
             stderr_content = None
             error_stream.close()
         else:
-            stderr_content = stderr.decode()
+            stderr_content = strip_gimp_warnings(stderr.decode())
 
         if stderr_content:
             error_lines = stderr_content.strip().split('\n')
