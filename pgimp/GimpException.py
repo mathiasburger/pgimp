@@ -6,10 +6,10 @@ class GimpException(Exception):
     Example:
 
     >>> from pgimp.GimpScriptRunner import GimpScriptRunner
-    >>> try: # doctest: +ELLIPSIS
+    >>> try:
     ...     GimpScriptRunner().execute('1/0')
     ... except Exception as e:
-    ...     str(e)
-    '...\\nZeroDivisionError: integer division or modulo by zero\\n'
+    ...     str(e).split('\\n')[-2]
+    'ZeroDivisionError: integer division or modulo by zero'
     """
     pass
