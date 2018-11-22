@@ -7,6 +7,8 @@ import gimp
 def __exception_hook(exctype, value, traceback):
     sys.__excepthook__(exctype, value, traceback)
     sys.stderr.write('__GIMP_SCRIPT_ERROR__ {:d}'.format(1))
+    sys.stderr.flush()
+    sys.stdout.flush()
     gimp.pdb.gimp_quit(0)
 
 
