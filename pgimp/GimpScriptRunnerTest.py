@@ -5,7 +5,8 @@ from tempfile import mktemp
 
 import pytest
 
-from pgimp.GimpScriptRunner import GimpScriptRunner, GimpScriptException, GimpScriptExecutionTimeoutException
+from pgimp.GimpScriptRunner import GimpScriptRunner, GimpScriptException, GimpScriptExecutionTimeoutException, \
+    strip_gimp_warnings
 from pgimp.util import file
 
 gsr = GimpScriptRunner()
@@ -112,3 +113,17 @@ def test_execute_with_error_stream():
         assert fh.read().endswith('__GIMP_SCRIPT_ERROR__ 1')
 
     os.remove(tmpfile)
+
+
+def test_strip_gimp_warnings():
+    warnings = '\n(gimp:5857): GLib-GObject-WARNING **: g_object_set_valist: object class \'GeglConfig\' has no property named \'cache-size\'\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E1A00 from "gimp:point-layer-mode" to "gimp:dissolve-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E1E10 from "gimp:point-layer-mode" to "gimp:behind-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E2200 from "gimp:point-layer-mode" to "gimp:multiply-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3250 from "gimp:point-layer-mode" to "gimp:screen-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3620 from "gimp:point-layer-mode" to "gimp:overlay-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3A50 from "gimp:point-layer-mode" to "gimp:difference-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3E10 from "gimp:point-layer-mode" to "gimp:addition-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E4250 from "gimp:point-layer-mode" to "gimp:subtract-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E4640 from "gimp:point-layer-mode" to "gimp:darken-only-mode"\n'
+    desired_output = ' my result\n\nblah'
+
+    input = warnings + desired_output
+    assert desired_output == strip_gimp_warnings(input)
+
+    warnings = '\n(gimp:5857): GLib-GObject-WARNING **: g_object_set_valist: object class \'GeglConfig\' has no property named \'cache-size\'\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E1A00 from "gimp:point-layer-mode" to "gimp:dissolve-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E1E10 from "gimp:point-layer-mode" to "gimp:behind-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E2200 from "gimp:point-layer-mode" to "gimp:multiply-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3250 from "gimp:point-layer-mode" to "gimp:screen-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3620 from "gimp:point-layer-mode" to "gimp:overlay-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3A50 from "gimp:point-layer-mode" to "gimp:difference-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3E10 from "gimp:point-layer-mode" to "gimp:addition-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E4250 from "gimp:point-layer-mode" to "gimp:subtract-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E4640 from "gimp:point-layer-mode" to "gimp:darken-only-mode"\n'
+    desired_output = '(gimp:THIS SHOULD NOT BE EXCLUDED BECAUSE OF ONLY ONE NEWLINE INSTEAD OF TWO\n\nblah'
+
+    input = warnings + desired_output
+    assert desired_output == strip_gimp_warnings(input)

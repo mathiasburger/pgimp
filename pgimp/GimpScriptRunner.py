@@ -85,6 +85,24 @@ def is_xvfb_present():
     return shutil.which(EXECUTABLE_XVFB) is not None
 
 
+def strip_gimp_warnings(input):
+    # workaround for gimp <2.8.22 that writes warnings to stdout instead of stderr
+    if input.startswith('\n(gimp:'):
+        to_find = '\n\n(gimp:'
+        pos = 0
+        while True:
+            last_pos = pos
+            pos = input.find(to_find, pos + len(to_find))
+            if pos == -1:
+                output_start = input.find('\n', last_pos + len(to_find))
+                if output_start == -1:
+                    raise GimpException('Could not find start of output after gimp warnings.')
+                output_start += 1
+                break
+        input = input[output_start:]
+    return input
+
+
 class GimpScriptRunner:
     """
     Executes python2 scripts within gimp's python interpreter and is used to create
@@ -325,20 +343,7 @@ class GimpScriptRunner:
                     error_string = error_string.replace('File "<string>"', 'File "{:s}"'.format(self._file_to_execute), 1)
                 raise GimpScriptException(error_string)
 
-        return stdout_content
+        return strip_gimp_warnings(stdout_content)
 
     def _parse(self, input: str) -> JsonType:
-        return json.loads(self._strip_gimp_warnings(input))
-
-    def _strip_gimp_warnings(self, input):
-        # workaround for gimp <2.8.22 that writes warnings to stdout instead of stderr
-        if input.startswith('(gimp:') or input.startswith('\n(gimp:'):
-            lines = input.split('\n')
-            idx = 0
-            for line in lines:
-                if line.startswith('(gimp:') or line.strip() == '':
-                    idx += 1
-                else:
-                    break
-            input = '\n'.join(lines[idx:])
-        return input
+        return json.loads(input)
