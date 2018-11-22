@@ -7,5 +7,6 @@ before_install:
   - sudo apt-get install -y xvfb gimp
 install:
   - pip install pytest setuptools
+  - pip install -e .
 script:
   - pytest -c pytest.ini pgimp
