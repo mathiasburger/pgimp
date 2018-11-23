@@ -137,3 +137,19 @@ def test_strip_gimp_warnings():
 
     input = warnings + desired_output
     assert desired_output == strip_gimp_warnings(input)
+
+
+def test_no_dangling_processes():
+    gsr.execute('print()')
+    gsr.execute('print()')
+
+    with pytest.raises(GimpScriptExecutionTimeoutException):
+        gsr.execute('print(', timeout_in_seconds=3)
+
+    open_processes = os.popen('ps -A | grep -i -e xvfb -e gimp').read().rstrip('\n').split('\n')
+    hanging_processes = filter(None, open_processes)
+    hanging_processes = filter(lambda x: '<defunct>' not in x, hanging_processes)  # defunct is ok in docker containers
+    hanging_processes = list(hanging_processes)
+
+    print('\n'.join(hanging_processes))
+    assert len(hanging_processes) == 0

@@ -3,10 +3,13 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from glob import glob
 from io import FileIO
 from json import JSONDecodeError
-from typing import Dict, Union
+from typing import Dict, Union, List
+
+import psutil
 
 from pgimp.GimpException import GimpException
 from pgimp.util import file
@@ -322,10 +325,22 @@ class GimpScriptRunner:
 
         code = initializer + extend_path + code + quit_gimp
 
+        children = []
+        if is_xvfb_present():
+            process = psutil.Process(self._gimp_process.pid)
+            current_time = time.time()
+            while len(children) != 4:  # Xvfb, gimp, script-fu, python
+                children = process.children(recursive=True)
+                time.sleep(0.1)
+                if time.time() - current_time > 5:
+                    raise GimpScriptExecutionTimeoutException('Child processes Xvfb, gimp, script-fu, python were not spawned in time.')
         try:
             stdout, stderr = self._gimp_process.communicate(code.encode(), timeout=timeout_in_seconds)
         except subprocess.TimeoutExpired as exception:
+            self._gimp_process.kill()
             raise GimpScriptExecutionTimeoutException(str(exception) + '\nCode that was executed:\n' + code)
+        finally:
+            self._kill_non_terminated_processes(children)
 
         if binary:
             stdout_content = stdout
@@ -368,6 +383,11 @@ class GimpScriptRunner:
         if output_stream:
             return None
         return strip_gimp_warnings(stdout_content)
+
+    def _kill_non_terminated_processes(self, processes: List[psutil.Process]):
+        for process in processes:
+            if process.is_running():
+                process.kill()
 
     def _parse(self, input: str) -> JsonType:
         try:
