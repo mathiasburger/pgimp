@@ -3,6 +3,8 @@
 Call gimp routines from python3 code.
 
 [![Build Status](https://travis-ci.org/mabu-github/pgimp.svg?branch=master)](https://travis-ci.org/mabu-github/pgimp)
+[![Docs](https://readthedocs.org/projects/pgimp/badge/?version=latest&style=flat)](https://readthedocs.org/projects/pgimp/)
+
 
 ## Create skeletons for gimp python autocompletion
 
