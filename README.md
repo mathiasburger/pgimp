@@ -59,4 +59,4 @@ pip3 install -e .
 Follow the guidelines for:
 * [PyPI](https://python-packaging.readthedocs.io/en/latest/minimal.html)
 * [Conda](https://conda.io/docs/user-guide/tutorials/build-pkgs.html)
-
+* [Travis CI Publishing to PyPI](https://docs.travis-ci.com/user/deployment/pypi/)

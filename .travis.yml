@@ -1,14 +1,24 @@
 dist: xenial
 language: python
 python:
-  - "3.6"
+- '3.6'
 before_install:
-  - sudo apt-get update
-  - sudo apt-get install -y xvfb gimp python python-pip
-  - sudo pip2 install numpy typing
+- sudo apt-get update
+- sudo apt-get install -y xvfb gimp python python-pip
+- sudo pip2 install numpy typing
 install:
-  - pip install pytest setuptools
-  - pip install -r requirements.txt
-  - pip install -e .
+- pip install pytest setuptools
+- pip install -r requirements.txt
+- pip install -e .
 script:
-  - pytest -c pytest.ini --maxfail=2 pgimp
+- pytest -c pytest.ini --maxfail=2 pgimp
+deploy:
+  provider: pypi
+  user: mabu
+  distributions: sdist bdist_wheel
+  password:
+    secure: Cm1lrBtZj3tEiMQLfTne6pmbZEAzblILlotY91ObVsCWHERyiNu6u0P4cunVnanvfx3t1i1AwtJQueq8nZNp2/pjQvZzWFmhE7zmFhBQaZ09obsPyKTyshKMe907C5RwFdVczwJsjuWZWjUXBfT+GWv4Qq52D4ndCRcsyk/D2tUQNCV8nvJTie9IBYGVGsARqp4ypq1/fMgHWczY/yqMgx14ep10uXdVxt3zwbsUDS9/CTGys4OeYaWZnqv/JeHkGJYHA0fDCWrPwCNRCGcqba8lU7inCjP7HtL0xyhc0qzcRGiI96mlb2zCxOArFhiOf/kdr7Dm/p5T4ZmVMuAKZ+1fWlUwgj8F0pkrVkQiWBaTcuND0NP2f+IBJWtVYQBXH8SEeOJwBfNja1EDLghNWmJiHJm+2HsmlbWrNdeU2seUAHIWUv568rsSFpQUqRKaF7YZgpf5uVJIS2o963YqcozVTahqvllbV36D0mtqdeapKfhhb2WQ/wHWH5WaBN06VnxORk57LDvtgdpwm75HSS6J5VIpYpJsJn6S1Y0xwkncHxfwCb1e9TFzFvpXz0kUEh7DfqSEBQG/kdURPorQDh96Kcu3daOPj8Rwl0Oty5Q2wytG6xW1ftzHZd9b9844IUPPosKY7x8YKqOWxh+8Y+toEgw6GveUc5sm+BhC6sg=
+  on:
+    tags: true
+  skip_existing: true
+  skip_cleanup: true
