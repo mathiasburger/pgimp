@@ -19,5 +19,6 @@ setup(
     author_email='mathias.burger@gmail.com',
     license='MIT',
     packages=find_packages(),
-    zip_safe=False
+    zip_safe=False,
+    install_requires=list(filter(None, open('requirements.txt').read().split('\n')))
 )
