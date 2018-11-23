@@ -10,3 +10,4 @@ __pycache__/
 /gimpenums/
 /gimpfu/
 /doc/build/
+/dist/
