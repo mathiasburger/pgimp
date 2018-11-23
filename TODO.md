@@ -11,3 +11,7 @@
     - "git+https://github.com/mabu-github/pgimp"
 * add examples to pgimp.GimpFile.GimpFile#layers, pgimp.GimpFile.GimpFile#layer_names, pgimp.GimpFile.GimpFile#remove_layer
 * describe how to use docker compose build environment in pycharm
+* on ubuntu 16.04 there will be defunct and leftover xvfb-run processes
+
+executing system commands and reading outputs
+os.popen('ps -A | grep -i xvfb').read()

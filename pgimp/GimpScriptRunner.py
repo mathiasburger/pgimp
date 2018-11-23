@@ -11,9 +11,10 @@ from typing import Dict, Union
 from pgimp.GimpException import GimpException
 from pgimp.util import file
 
-EXECUTABLE_GIMP = 'gimp'
 EXECUTABLE_XVFB = 'xvfb-run'
+FLAG_AUTO_SERVERNUM = '--auto-servernum'
 
+EXECUTABLE_GIMP = 'gimp'
 FLAG_NO_INTERFACE = '-i'
 FLAG_PYTHON_INTERPRETER = '--batch-interpreter=python-fu-eval'
 FLAG_NO_DATA = '-d'
@@ -82,8 +83,12 @@ def is_gimp_present():
     return path_to_gimp_executable() is not None
 
 
+def path_to_xvfb_run():
+    return shutil.which(EXECUTABLE_XVFB)
+
+
 def is_xvfb_present():
-    return shutil.which(EXECUTABLE_XVFB) is not None
+    return  path_to_xvfb_run() is not None
 
 
 def strip_gimp_warnings(input):
@@ -273,7 +278,8 @@ class GimpScriptRunner:
 
         command = []
         if is_xvfb_present():
-            command.append(shutil.which('xvfb-run'))
+            command.append(path_to_xvfb_run())
+            command.append(FLAG_AUTO_SERVERNUM)  # workaround for defunct xvfb-run processes on ubuntu 16.04
         command.append(path_to_gimp_executable())
         command.extend([
             FLAG_NO_INTERFACE,
@@ -353,6 +359,7 @@ class GimpScriptRunner:
                 if self._file_to_execute:
                     error_string = error_string.replace('File "<string>"', 'File "{:s}"'.format(self._file_to_execute), 1)
                 raise GimpScriptException(error_string)
+            raise GimpScriptException('\n'.join(error_lines))
 
         if binary:
             # gimp warnings can be mixed with byte content, use latin1 because it is a bytewise encoding

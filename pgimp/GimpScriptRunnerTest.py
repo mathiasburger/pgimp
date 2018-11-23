@@ -94,7 +94,7 @@ def test_execute_with_output_stream():
     assert out is None
     assert stream.closed
     with open(tmpfile, 'r') as fh:
-        assert '1\n2\n3\n' == fh.read()
+        assert '1\n2\n3\n' == strip_gimp_warnings(fh.read())
 
     os.remove(tmpfile)
 
