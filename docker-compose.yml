@@ -1,0 +1,17 @@
+version: '2'
+
+services:
+  pgimp-ubuntu-16.04:
+    build:
+      context: .
+      dockerfile: test/envs/linux/ubuntu/16.04/Dockerfile
+    image: mabu/pgimp-ubuntu-16.04:latest
+    volumes:
+      - ./:/src
+  pgimp-ubuntu-18.04:
+    build:
+      context: .
+      dockerfile: test/envs/linux/ubuntu/18.04/Dockerfile
+    image: mabu/pgimp-ubuntu-18.04:latest
+    volumes:
+      - ./:/src

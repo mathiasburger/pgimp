@@ -3,10 +3,13 @@ import tempfile
 from io import FileIO
 from tempfile import mktemp
 
+import numpy as np
 import pytest
 
-from pgimp.GimpScriptRunner import GimpScriptRunner, GimpScriptException, GimpScriptExecutionTimeoutException
+from pgimp.GimpScriptRunner import GimpScriptRunner, GimpScriptException, GimpScriptExecutionTimeoutException, \
+    strip_gimp_warnings
 from pgimp.util import file
+from pgimp.util.TempFile import TempFile
 
 gsr = GimpScriptRunner()
 
@@ -92,23 +95,72 @@ def test_execute_with_output_stream():
     assert out is None
     assert stream.closed
     with open(tmpfile, 'r') as fh:
-        assert '1\n2\n3\n' == fh.read()
+        assert '1\n2\n3\n' == strip_gimp_warnings(fh.read())
 
     os.remove(tmpfile)
 
 
 def test_execute_with_error_stream():
-    tmpfile = tempfile.mktemp()
+    with TempFile() as tmpfile:
+        stream = FileIO(tmpfile, 'w')
 
-    stream = FileIO(tmpfile, 'w')
-    out = gsr.execute(
-        "print('1'); print('2'); print('3'); 1/0",
-        error_stream=stream
+        try:
+            out = gsr.execute(
+                "print('1'); print('2'); print('3'); 1/0",
+                error_stream=stream
+            )
+
+            assert '1\n2\n3\n' == out
+            assert stream.closed
+
+            with open(tmpfile, 'r') as fh:
+                assert fh.read().endswith('__GIMP_SCRIPT_ERROR__ 1')
+        except GimpScriptException as e:
+            # gimp prior to 2.8.22 writes stderr to stdout and an error in stdout will cause an exception
+            # and stderr will be empty
+
+            exception_message = strip_gimp_warnings(str(e))
+            assert exception_message.startswith('1\n2\n3\nTraceback')
+            assert exception_message.endswith('ZeroDivisionError: integer division or modulo by zero\n')
+
+            with open(tmpfile, 'r') as fh:
+                assert fh.read().endswith('')
+
+
+def test_execute_binary():
+    arr = np.frombuffer(GimpScriptRunner().execute_binary(
+        "from pgimp.gimp.parameter import *; import sys; sys.stdout.write(get_bytes('arr'))",
+        parameters = {"arr": np.array([i for i in range(0, 3)], dtype=np.uint8).tobytes()}),
+        dtype=np.uint8
     )
+    assert np.all([0, 1, 2] == arr)
 
-    assert '1\n2\n3\n' == out
-    assert stream.closed
-    with open(tmpfile, 'r') as fh:
-        assert fh.read().endswith('__GIMP_SCRIPT_ERROR__ 1')
 
-    os.remove(tmpfile)
+def test_strip_gimp_warnings():
+    warnings = '\n(gimp:5857): GLib-GObject-WARNING **: g_object_set_valist: object class \'GeglConfig\' has no property named \'cache-size\'\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E1A00 from "gimp:point-layer-mode" to "gimp:dissolve-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E1E10 from "gimp:point-layer-mode" to "gimp:behind-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E2200 from "gimp:point-layer-mode" to "gimp:multiply-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3250 from "gimp:point-layer-mode" to "gimp:screen-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3620 from "gimp:point-layer-mode" to "gimp:overlay-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3A50 from "gimp:point-layer-mode" to "gimp:difference-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3E10 from "gimp:point-layer-mode" to "gimp:addition-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E4250 from "gimp:point-layer-mode" to "gimp:subtract-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E4640 from "gimp:point-layer-mode" to "gimp:darken-only-mode"\n'
+    desired_output = ' my result\n\nblah'
+
+    input = warnings + desired_output
+    assert desired_output == strip_gimp_warnings(input)
+
+    warnings = '\n(gimp:5857): GLib-GObject-WARNING **: g_object_set_valist: object class \'GeglConfig\' has no property named \'cache-size\'\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E1A00 from "gimp:point-layer-mode" to "gimp:dissolve-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E1E10 from "gimp:point-layer-mode" to "gimp:behind-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E2200 from "gimp:point-layer-mode" to "gimp:multiply-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3250 from "gimp:point-layer-mode" to "gimp:screen-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3620 from "gimp:point-layer-mode" to "gimp:overlay-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3A50 from "gimp:point-layer-mode" to "gimp:difference-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3E10 from "gimp:point-layer-mode" to "gimp:addition-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E4250 from "gimp:point-layer-mode" to "gimp:subtract-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E4640 from "gimp:point-layer-mode" to "gimp:darken-only-mode"\n'
+    desired_output = '(gimp:THIS SHOULD NOT BE EXCLUDED BECAUSE OF ONLY ONE NEWLINE INSTEAD OF TWO\n\nblah'
+
+    input = warnings + desired_output
+    assert desired_output == strip_gimp_warnings(input)
+
+
+def test_no_dangling_processes():
+    gsr.execute('print()')
+    gsr.execute('print()')
+
+    with pytest.raises(GimpScriptExecutionTimeoutException):
+        gsr.execute('print(', timeout_in_seconds=3)
+
+    open_processes = os.popen('ps -A | grep -i -e xvfb -e gimp').read().rstrip('\n').split('\n')
+    hanging_processes = filter(None, open_processes)
+    hanging_processes = filter(lambda x: '<defunct>' not in x, hanging_processes)  # defunct is ok in docker containers
+    hanging_processes = list(hanging_processes)
+
+    print('\n'.join(hanging_processes))
+    assert len(hanging_processes) == 0

@@ -2,6 +2,10 @@
 
 Call gimp routines from python3 code.
 
+[![Build Status](https://travis-ci.org/mabu-github/pgimp.svg?branch=master)](https://travis-ci.org/mabu-github/pgimp)
+[![Docs](https://readthedocs.org/projects/pgimp/badge/?version=latest&style=flat)](https://readthedocs.org/projects/pgimp/)
+
+
 ## Create skeletons for gimp python autocompletion
 
 When writing scripts to be executed within gimp, it is useful to have IDE autocompletion. `GimpDocumentationGenerator` 
@@ -20,9 +24,8 @@ See `pgimp.GimpScriptRunnerTest.test_import_from_pgimp_library`.
 
 # Installation
 
-The package manager `pip` and the python `setuptools` are required.
-
-Needs gimp >=2.8.22 because previous versions write their warnings to stdout instead of stderr.
+The package manager `pip` and the python `setuptools` are required. As gimp uses a python2 interpreter, 
+the pip packages `numpy` and `typing` for python2 need to be installed.
 
 ## Operating system dependent infos
 

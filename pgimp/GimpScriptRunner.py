@@ -3,16 +3,21 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from glob import glob
 from io import FileIO
-from typing import Dict, Union
+from json import JSONDecodeError
+from typing import Dict, Union, List
+
+import psutil
 
 from pgimp.GimpException import GimpException
 from pgimp.util import file
 
-EXECUTABLE_GIMP = 'gimp'
 EXECUTABLE_XVFB = 'xvfb-run'
+FLAG_AUTO_SERVERNUM = '--auto-servernum'
 
+EXECUTABLE_GIMP = 'gimp'
 FLAG_NO_INTERFACE = '-i'
 FLAG_PYTHON_INTERPRETER = '--batch-interpreter=python-fu-eval'
 FLAG_NO_DATA = '-d'
@@ -81,8 +86,29 @@ def is_gimp_present():
     return path_to_gimp_executable() is not None
 
 
+def path_to_xvfb_run():
+    return shutil.which(EXECUTABLE_XVFB)
+
+
 def is_xvfb_present():
-    return shutil.which(EXECUTABLE_XVFB) is not None
+    return  path_to_xvfb_run() is not None
+
+
+def strip_gimp_warnings(input):
+    if input.startswith('\n(gimp:'):
+        to_find = '\n\n(gimp:'
+        pos = 0
+        while True:
+            last_pos = pos
+            pos = input.find(to_find, pos + len(to_find))
+            if pos == -1:
+                output_start = input.find('\n', last_pos + len(to_find))
+                if output_start == -1:
+                    raise GimpException('Could not find start of output after gimp warnings.')
+                output_start += 1
+                break
+        input = input[output_start:]
+    return input
 
 
 class GimpScriptRunner:
@@ -255,7 +281,8 @@ class GimpScriptRunner:
 
         command = []
         if is_xvfb_present():
-            command.append(shutil.which('xvfb-run'))
+            command.append(path_to_xvfb_run())
+            command.append(FLAG_AUTO_SERVERNUM)  # workaround for defunct xvfb-run processes on ubuntu 16.04
         command.append(path_to_gimp_executable())
         command.extend([
             FLAG_NO_INTERFACE,
@@ -298,10 +325,22 @@ class GimpScriptRunner:
 
         code = initializer + extend_path + code + quit_gimp
 
+        children = []
+        if is_xvfb_present():
+            process = psutil.Process(self._gimp_process.pid)
+            current_time = time.time()
+            while len(children) != 4:  # Xvfb, gimp, script-fu, python
+                children = process.children(recursive=True)
+                time.sleep(0.1)
+                if time.time() - current_time > 5:
+                    raise GimpScriptExecutionTimeoutException('Child processes Xvfb, gimp, script-fu, python were not spawned in time.')
         try:
             stdout, stderr = self._gimp_process.communicate(code.encode(), timeout=timeout_in_seconds)
         except subprocess.TimeoutExpired as exception:
+            self._gimp_process.kill()
             raise GimpScriptExecutionTimeoutException(str(exception) + '\nCode that was executed:\n' + code)
+        finally:
+            self._kill_non_terminated_processes(children)
 
         if binary:
             stdout_content = stdout
@@ -315,7 +354,18 @@ class GimpScriptRunner:
             stderr_content = None
             error_stream.close()
         else:
-            stderr_content = stderr.decode()
+            stderr_content = strip_gimp_warnings(stderr.decode())
+
+        # gimp prior to 2.8.22 writes plugin's stderr to stdout
+        if binary:
+            stdout_with_possible_errors = strip_gimp_warnings(stdout.decode('latin1'))
+        if not output_stream:
+            if not binary:
+                stdout_with_possible_errors = stdout_content
+            if stdout_with_possible_errors.strip().split('\n')[-1].startswith('__GIMP_SCRIPT_ERROR__'):
+                if binary:  # convert to utf8 because output is error and should not be binary
+                    stdout_with_possible_errors = stdout_with_possible_errors.encode('latin1').decode()
+                stderr_content = stdout_with_possible_errors
 
         if stderr_content:
             error_lines = stderr_content.strip().split('\n')
@@ -324,21 +374,23 @@ class GimpScriptRunner:
                 if self._file_to_execute:
                     error_string = error_string.replace('File "<string>"', 'File "{:s}"'.format(self._file_to_execute), 1)
                 raise GimpScriptException(error_string)
+            raise GimpScriptException('\n'.join(error_lines))
 
-        return stdout_content
+        if binary:
+            # gimp warnings can be mixed with byte content, use latin1 because it is a bytewise encoding
+            # that extends ascii (ascii is only 0 to 127); gimp warnings should only contain ascii characters
+            return strip_gimp_warnings(stdout.decode('latin1')).encode('latin1')
+        if output_stream:
+            return None
+        return strip_gimp_warnings(stdout_content)
+
+    def _kill_non_terminated_processes(self, processes: List[psutil.Process]):
+        for process in processes:
+            if process.is_running():
+                process.kill()
 
     def _parse(self, input: str) -> JsonType:
-        return json.loads(self._strip_gimp_warnings(input))
-
-    def _strip_gimp_warnings(self, input):
-        # workaround for gimp <2.8.22 that writes warnings to stdout instead of stderr
-        if input.startswith('(gimp:') or input.startswith('\n(gimp:'):
-            lines = input.split('\n')
-            idx = 0
-            for line in lines:
-                if line.startswith('(gimp:') or line.strip() == '':
-                    idx += 1
-                else:
-                    break
-            input = '\n'.join(lines[idx:])
-        return input
+        try:
+            return json.loads(input)
+        except JSONDecodeError as e:
+            raise GimpScriptException('The following JSON could not be parsed:\n>>>' + input + '<<<\nOriginal decoding error:\n' + str(e))
