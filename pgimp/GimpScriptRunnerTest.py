@@ -9,6 +9,7 @@ import pytest
 from pgimp.GimpScriptRunner import GimpScriptRunner, GimpScriptException, GimpScriptExecutionTimeoutException, \
     strip_gimp_warnings
 from pgimp.util import file
+from pgimp.util.TempFile import TempFile
 
 gsr = GimpScriptRunner()
 
@@ -100,20 +101,30 @@ def test_execute_with_output_stream():
 
 
 def test_execute_with_error_stream():
-    tmpfile = tempfile.mktemp()
+    with TempFile() as tmpfile:
+        stream = FileIO(tmpfile, 'w')
 
-    stream = FileIO(tmpfile, 'w')
-    out = gsr.execute(
-        "print('1'); print('2'); print('3'); 1/0",
-        error_stream=stream
-    )
+        try:
+            out = gsr.execute(
+                "print('1'); print('2'); print('3'); 1/0",
+                error_stream=stream
+            )
 
-    assert '1\n2\n3\n' == out
-    assert stream.closed
-    with open(tmpfile, 'r') as fh:
-        assert fh.read().endswith('__GIMP_SCRIPT_ERROR__ 1')
+            assert '1\n2\n3\n' == out
+            assert stream.closed
 
-    os.remove(tmpfile)
+            with open(tmpfile, 'r') as fh:
+                assert fh.read().endswith('__GIMP_SCRIPT_ERROR__ 1')
+        except GimpScriptException as e:
+            # gimp prior to 2.8.22 writes stderr to stdout and an error in stdout will cause an exception
+            # and stderr will be empty
+
+            exception_message = strip_gimp_warnings(str(e))
+            assert exception_message.startswith('1\n2\n3\nTraceback')
+            assert exception_message.endswith('ZeroDivisionError: integer division or modulo by zero\n')
+
+            with open(tmpfile, 'r') as fh:
+                assert fh.read().endswith('')
 
 
 def test_execute_binary():
