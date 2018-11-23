@@ -1,23 +1,28 @@
 # pgimp
 
-Call gimp routines from python3 code.
-
 [![Build Status](https://travis-ci.org/mabu-github/pgimp.svg?branch=master)](https://travis-ci.org/mabu-github/pgimp)
 [![Docs](https://readthedocs.org/projects/pgimp/badge/?version=latest&style=flat)](https://readthedocs.org/projects/pgimp/)
 
+Interacting with gimp in python3.
 
-## Create skeletons for gimp python autocompletion
+Use Cases:
+* Workflows where machine learning data has to be annotated. Raw data 
+can be converted to gimp files where the annotation process can happen (gimp's thresholding tools 
+etc. make it easy to do annotation for pixelwise segmentation). After the masks are created, they 
+can be converted back to e.g. numpy files.
 
-When writing scripts to be executed within gimp, it is useful to have IDE autocompletion. `GimpDocumentationGenerator` 
-can generate python skeletons for this task. The corresponding test `GimpDocumentationGeneratorTest` describes how 
-to write the skeleton.
+Read the [documentation](https://pgimp.readthedocs.io/en/latest/) for details on what pgimp can 
+do for you and how it is achieved. Every single public method comes with a short working example!
+
+## Skeletons for autocompleting gimp scripts
+
+On setup, the `GimpDocumentationGenerator` will generate python skeletons for the methods that gimp 
+exposes to the interpreter through the procedural database (pdb). This enables autocompletion in your IDE.
 
 ## Run a python script within gimp
 
 Running python code within gimp is performed by the `GimpScriptRunner`. Have a look at the corresponding test 
 `GimpScriptRunnerTest` to see how this works.
-
-## Convenience function library
 
 You may import convenience functions from `pgimp.gimp` in your gimp python scripts. 
 See `pgimp.GimpScriptRunnerTest.test_import_from_pgimp_library`.
@@ -41,10 +46,41 @@ Install gimp from gimp.org or via homebrew.
 
 Windows is not supported.
 
-## From github
+## Using pip
 
 ```
+pip3 install pgimp
+```
+
+## Using conda
+
+Using a conda environment.yml file:
+```
+name: <NAME_OF_THE_ENV>
+channels:
+  - defaults
+dependencies:
+  - python=<3.6+>
+  - pip:
+    - pgimp
+```
+
+## From github
+
+Using pip:
+```
 pip3 install git+https://github.com/mabu-github/pgimp
+```
+
+Using a conda environment.yml file:
+```
+name: <NAME_OF_THE_ENV>
+channels:
+  - defaults
+dependencies:
+  - python=<3.6+>
+  - pip:
+    - "git+https://github.com/mabu-github/pgimp"
 ```
 
 ## Local
@@ -54,9 +90,6 @@ Install using symlink to checked out code (for development):
 pip3 install -e .
 ```
 
-# Publishing
+# Contributing and Publishing
 
-Follow the guidelines for:
-* [PyPI](https://python-packaging.readthedocs.io/en/latest/minimal.html)
-* [Conda](https://conda.io/docs/user-guide/tutorials/build-pkgs.html)
-* [Travis CI Publishing to PyPI](https://docs.travis-ci.com/user/deployment/pypi/)
+See [CONTRIBUTING.md](CONTRIBUTING.md).
