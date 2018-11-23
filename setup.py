@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-from pgimp import __version__, project
+from pgimp import __version__, project, author
 from pgimp.doc.GimpDocumentationGenerator import GimpDocumentationGenerator
 from pgimp.doc.output.OutputPythonSkeleton import OutputPythonSkeleton
 from pgimp.util import file
@@ -18,7 +18,7 @@ setup(
     version=__version__,
     description='Interacting with gimp in python3.',
     url='https://github.com/mabu-github/pgimp',
-    author='Mathias Burger',
+    author=author,
     author_email='mathias.burger@gmail.com',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -29,7 +29,9 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "License :: OSI Approved :: MIT License",
-        "Operating System :: Linux",
-        "Operating System :: Mac OS",
+        "Operating System :: POSIX :: Linux",
+        "Operating System :: MacOS",
+        "Topic :: Multimedia :: Graphics",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
 )
