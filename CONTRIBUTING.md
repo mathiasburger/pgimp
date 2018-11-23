@@ -23,3 +23,6 @@ Is done by the maintainer using the following guidelines:
 * [PyPI](https://python-packaging.readthedocs.io/en/latest/minimal.html)
 * [Conda](https://conda.io/docs/user-guide/tutorials/build-pkgs.html)
 * [Travis CI Publishing to PyPI](https://docs.travis-ci.com/user/deployment/pypi/)
+
+Tags are created by the maintainer using `tag.sh`. They will be automatically published to the python packaging 
+index PyPI using the travis ci when the build of a tag passes.
