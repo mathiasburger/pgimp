@@ -9,5 +9,4 @@
 * test installation in conda environment.yml:
   - pip:
     - "git+https://github.com/mabu-github/pgimp"
-* add examples to pgimp.GimpFile.GimpFile#layers, pgimp.GimpFile.GimpFile#layer_names, pgimp.GimpFile.GimpFile#remove_layer
 * describe how to use docker compose build environment in pycharm
