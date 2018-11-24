@@ -1,7 +1,10 @@
+# Copyright 2018 Mathias Burger <mathias.burger@gmail.com>
+#
+# SPDX-License-Identifier: MIT
+
 import os
 import tempfile
 
-from pgimp.util import file
 from pgimp.util.file import copy_relative, relative_to
 
 

@@ -93,3 +93,6 @@ pip3 install -e .
 # Contributing and Publishing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+# License
+ This project is licensed under the MIT license. See the [LICENSE](LICENSE) file for more info.

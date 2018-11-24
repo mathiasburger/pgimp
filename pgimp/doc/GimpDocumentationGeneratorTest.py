@@ -1,3 +1,7 @@
+# Copyright 2018 Mathias Burger <mathias.burger@gmail.com>
+#
+# SPDX-License-Identifier: MIT
+
 import os
 
 from pgimp.doc.GimpDocumentationGenerator import GimpDocumentationGenerator

@@ -1,6 +1,11 @@
+# Copyright 2018 Mathias Burger <mathias.burger@gmail.com>
+#
+# SPDX-License-Identifier: MIT
+
 from typing import Callable
 
 import gimp
+
 from pgimp.gimp.parameter import get_json
 
 

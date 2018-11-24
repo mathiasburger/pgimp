@@ -1,3 +1,7 @@
+# Copyright 2018 Mathias Burger <mathias.burger@gmail.com>
+#
+# SPDX-License-Identifier: MIT
+
 class GimpException(Exception):
     """
     When pgimp encounters a gimp related exception, it will automatically map it onto

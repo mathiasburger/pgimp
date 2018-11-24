@@ -1,3 +1,7 @@
+# Copyright 2018 Mathias Burger <mathias.burger@gmail.com>
+#
+# SPDX-License-Identifier: MIT
+
 class Layer:
     def __init__(self, properties: dict) -> None:
         super().__init__()

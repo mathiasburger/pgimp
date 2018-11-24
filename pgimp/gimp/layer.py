@@ -1,7 +1,10 @@
-import numpy as np
+# Copyright 2018 Mathias Burger <mathias.burger@gmail.com>
+#
+# SPDX-License-Identifier: MIT
 
 import gimp
 import gimpenums
+import numpy as np
 
 
 class LayerException(Exception):

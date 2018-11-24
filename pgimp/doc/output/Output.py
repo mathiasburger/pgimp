@@ -1,3 +1,7 @@
+# Copyright 2018 Mathias Burger <mathias.burger@gmail.com>
+#
+# SPDX-License-Identifier: MIT
+
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from typing import Tuple, MutableMapping, Union, List, Any

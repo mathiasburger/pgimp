@@ -1,3 +1,7 @@
+# Copyright 2018 Mathias Burger <mathias.burger@gmail.com>
+#
+# SPDX-License-Identifier: MIT
+
 """
 A colormap from opencv could be created like this:
 ::

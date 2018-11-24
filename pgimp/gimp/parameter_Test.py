@@ -1,7 +1,11 @@
+# Copyright 2018 Mathias Burger <mathias.burger@gmail.com>
+#
+# SPDX-License-Identifier: MIT
+
+import numpy as np
 import pytest
 
 from pgimp.GimpScriptRunner import GimpScriptRunner, GimpScriptException
-import numpy as np
 
 gsr = GimpScriptRunner()
 
