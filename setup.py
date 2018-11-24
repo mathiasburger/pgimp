@@ -1,5 +1,8 @@
+import os
+import shutil
+
 from setuptools import setup, find_packages
-from setuptools.command.install import install
+from setuptools.command.build_py import build_py
 
 from pgimp import __version__, project, author
 from pgimp.doc.GimpDocumentationGenerator import GimpDocumentationGenerator
@@ -7,14 +10,18 @@ from pgimp.doc.output.OutputPythonSkeleton import OutputPythonSkeleton
 from pgimp.util import file
 
 
-class GimpDocumentationGeneratorCommand(install):
+class GimpDocumentationGeneratorCommand(build_py):
     def run(self):
         if not self._dry_run:
             generate_python_skeleton = GimpDocumentationGenerator(OutputPythonSkeleton(
-                file.relative_to(__file__, 'gimp'))
-            )
+                file.relative_to(__file__, 'gimp')
+            ))
             generate_python_skeleton()
-        return install.run(self)
+            target_dir = self.build_lib
+            shutil.copytree(file.relative_to(__file__, 'gimp'), os.path.join(target_dir, 'gimp'))
+            shutil.copytree(file.relative_to(__file__, 'gimpenums'), os.path.join(target_dir, 'gimpenums'))
+            shutil.copytree(file.relative_to(__file__, 'gimpfu'), os.path.join(target_dir, 'gimpfu'))
+        return build_py.run(self)
 
 
 with open("README.md", "r") as fh:
@@ -43,6 +50,6 @@ setup(
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
     cmdclass=dict(
-        install=GimpDocumentationGeneratorCommand
+        build_py=GimpDocumentationGeneratorCommand
     ),
 )
