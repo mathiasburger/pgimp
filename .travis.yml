@@ -10,8 +10,9 @@ install:
 - pip install pytest setuptools
 - pip install -r requirements.txt
 - pip install -e .
+- python -m pgimp.doc.GimpDocumentationGenerator
 script:
-- python3 -m pytest -c pytest.ini --maxfail=2 pgimp
+- pytest -c pytest.ini --maxfail=2 pgimp
 deploy:
   provider: pypi
   user: mabu

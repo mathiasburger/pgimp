@@ -205,3 +205,15 @@ class GimpDocumentationGenerator:
             """)
         constants = self._execute(const_dump)
         self._output.gimpfu_constants(constants)
+
+
+if __name__ == '__main__':
+    import sys
+    from pgimp.util import file
+    sys.path.append(file.relative_to(__file__, '../../'))
+    from pgimp.doc.output.OutputPythonSkeleton import OutputPythonSkeleton
+
+    generate_python_skeleton = GimpDocumentationGenerator(OutputPythonSkeleton(
+        file.relative_to(__file__, '../../gimp')
+    ))
+    generate_python_skeleton()
