@@ -10,6 +10,7 @@ executed within gimp's python interpreter.
 .. toctree::
    :maxdepth: 2
 
+    Tutorial <tutorial.rst>
     API Documentation <apidoc.rst>
 
 Indices and tables
