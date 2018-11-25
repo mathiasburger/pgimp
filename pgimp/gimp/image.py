@@ -27,3 +27,12 @@ def create_from_template_file(template_file):
     template = open_xcf(template_file)
     image = create_from_template_image(template)
     return image
+
+
+def create_from_file(file):
+    """
+    :type file: str
+    :return: gimp.Image
+    """
+    image = gimp.pdb.gimp_file_load(file, file)
+    return image

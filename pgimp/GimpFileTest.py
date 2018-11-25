@@ -219,3 +219,20 @@ def test_create_empty():
         gimp_file = GimpFile(f).create_empty(3, 2, GimpFileType.RGB)
         assert (3, 2) == gimp_file.dimensions()
         assert [] == gimp_file.layer_names()
+
+
+def test_create_from_file():
+    test_export()
+
+
+def test_export():
+    with TempFile('.xcf') as xcf, TempFile('.png') as png,  TempFile('.jpg') as jpg, TempFile('.xcf') as from_png:
+        gimp_file = GimpFile(xcf) \
+            .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8)) \
+            .add_layer_from_numpy('Foreground', np.ones(shape=(1, 1), dtype=np.uint8) * 255, opacity=50.) \
+
+        gimp_file.export(png)  # saved as grayscale with alpha (identify -format '%[channels]' FILE)
+        gimp_file.export(jpg)
+
+        assert np.all([127, 255] == GimpFile(from_png).create_from_file(png, layer_name='Image').layer_to_numpy('Image'))
+        assert np.all([127] == GimpFile(from_png).create_from_file(jpg, layer_name='Image').layer_to_numpy('Image'))

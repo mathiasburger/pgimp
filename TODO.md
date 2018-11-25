@@ -7,3 +7,4 @@
 * newtype handling in pgimp.GimpFile.GimpFile#add_layer_from_file; copy mode, opacity and type from source layer unless specified otherwise
 * gimp file + collection: rename, reorder layer functionality
 * describe how to use docker compose build environment in pycharm
+* gimp exports gray image to png graya even though there is no need for that: save gray and rgb images without alpha when exporting to png
