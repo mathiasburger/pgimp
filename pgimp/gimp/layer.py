@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from typing import List
+
 import numpy as np
 
 import gimp
@@ -232,3 +234,15 @@ def convert_layer_to_numpy(image, layer_name):
     bpp = region.bpp
     np_buffer = np.frombuffer(buffer, dtype=np.uint8).reshape((layer.height, layer.width, bpp))
     return np_buffer
+
+
+def convert_layers_to_numpy(image, layer_names):
+    """
+    :type image: gimp.Image
+    :type layer_names: List[str]
+    :rtype: np.ndarray
+    """
+    layer_list = []
+    for layer_name in layer_names:
+        layer_list.append(convert_layer_to_numpy(image, layer_name))
+    return np.concatenate(layer_list, axis=2)
