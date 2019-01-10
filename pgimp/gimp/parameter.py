@@ -73,7 +73,7 @@ def get_bytes(name, default=None):
 def get_json(name, default=None):
     """
     :type name: str
-    :type default: bytes
+    :type default: str
     :rtype: None or bool or int or float or str or list or dict
     """
     return json.loads(get_parameter(name, default))

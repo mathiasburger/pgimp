@@ -30,6 +30,20 @@ def test_layer_to_numpy():
     assert actual.shape == (2, 3, 3)
 
 
+def test_layers_to_numpy():
+    with TempFile('.xcf') as f:
+        gimp_file = GimpFile(f) \
+            .create('Red', np.zeros(shape=(1, 2, 3), dtype=np.uint8)) \
+            .add_layer_from_numpy('Green', np.ones(shape=(1, 2, 3), dtype=np.uint8) * 127) \
+            .add_layer_from_numpy('Blue', np.ones(shape=(1, 2, 3), dtype=np.uint8) * 255)
+        np_array = gimp_file.layers_to_numpy(['Red', 'Green', 'Blue'])
+
+    assert (1, 2, 9) == np_array.shape
+    assert np.all(np.array([
+        [[0, 0, 0, 127, 127, 127, 255, 255, 255], [0, 0, 0, 127, 127, 127, 255, 255, 255]],
+    ], dtype=np.uint8) == np_array)
+
+
 def test_create():
     filename = file.relative_to(__file__, 'test-resources/test-create.xcf')
     layer_bg = np.array([

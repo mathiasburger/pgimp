@@ -342,20 +342,44 @@ class GimpFile:
         :param layer_name: Name of the layer to convert.
         :return: Numpy array of unsigned 8 bit integers.
         """
-        bytes = self._gsr.execute_binary(textwrap.dedent(
-            """
-            import numpy as np
-            import sys
-            from pgimp.gimp.file import open_xcf
-            from pgimp.gimp.layer import convert_layer_to_numpy
+        return self.layers_to_numpy([layer_name])
 
-            np_buffer = convert_layer_to_numpy(open_xcf('{0:s}'), '{1:s}')
-            np.save(sys.stdout, np_buffer)
-            """
-        ).format(
-            escape_single_quotes(self._file),
-            escape_single_quotes(layer_name)
-        ), timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
+    def layers_to_numpy(self, layer_names: List[str]) -> np.ndarray:
+        """
+        Convert gimp layers to a numpy array of unsigned 8 bit integers.
+
+        Example:
+
+        >>> from pgimp.GimpFile import GimpFile
+        >>> from pgimp.util.TempFile import TempFile
+        >>> import numpy as np
+        >>> with TempFile('.xcf') as f:
+        ...     gimp_file = GimpFile(f) \\
+        ...         .create('Red', np.zeros(shape=(1, 2, 1), dtype=np.uint8)) \\
+        ...         .add_layer_from_numpy('Green', np.ones(shape=(1, 2, 1), dtype=np.uint8)*127) \\
+        ...         .add_layer_from_numpy('Blue', np.ones(shape=(1, 2, 1), dtype=np.uint8)*255)
+        ...     gimp_file.layers_to_numpy(['Red', 'Green', 'Blue']).shape
+        (1, 2, 3)
+
+        :param layer_names: Names of the layers to convert.
+        :return: Numpy array of unsigned 8 bit integers.
+        """
+        bytes = self._gsr.execute_binary(
+            textwrap.dedent(
+                """
+                import numpy as np
+                import sys
+                from pgimp.gimp.file import open_xcf
+                from pgimp.gimp.parameter import get_json
+                from pgimp.gimp.layer import convert_layers_to_numpy
+    
+                np_buffer = convert_layers_to_numpy(open_xcf('{0:s}'), get_json('layer_names', '[]'))
+                np.save(sys.stdout, np_buffer)
+                """,
+            ).format(escape_single_quotes(self._file)),
+            parameters={'layer_names': layer_names},
+            timeout_in_seconds=self._layer_conversion_timeout_in_seconds,
+        )
 
         return np.load(io.BytesIO(bytes))
 
