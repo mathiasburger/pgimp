@@ -2,9 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+import numpy as np
+
 import gimp
 import gimpenums
-import numpy as np
 
 
 class LayerException(Exception):
@@ -27,6 +28,7 @@ def copy_or_merge_layer(image_src, layer_name_src, image_dst, layer_name_dst, po
     :type layer_name_dst: str
     :type position_dst: int
     :type merge: bool
+    :rtype: gimp.Layer
     """
     layer_src = gimp.pdb.gimp_image_get_layer_by_name(image_src, layer_name_src)
     if layer_src is None:
@@ -48,6 +50,7 @@ def copy_or_merge_layer(image_src, layer_name_src, image_dst, layer_name_dst, po
     layer_floating = gimp.pdb.gimp_edit_paste(layer_dst, True)
     gimp.pdb.gimp_floating_sel_anchor(layer_floating)
     reorder_layer(image_dst, layer_dst, position_dst)
+    return layer_dst
 
 
 def copy_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_dst=0):
@@ -58,11 +61,12 @@ def copy_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_ds
     :type layer_name_dst: str
     :type position_dst: int
     :type merge: bool
+    :rtype: gimp.Layer
     """
     layer_dst = gimp.pdb.gimp_image_get_layer_by_name(image_dst, layer_name_dst)
     if layer_dst is not None:
         raise LayerExistsException('Destination layer ' + layer_name_dst + ' already exists.')
-    copy_or_merge_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_dst)
+    return copy_or_merge_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_dst)
 
 
 def merge_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_dst=0):
@@ -73,11 +77,12 @@ def merge_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_d
     :type layer_name_dst: str
     :type position_dst: int
     :type merge: bool
+    :rtype: gimp.Layer
     """
     layer_dst = gimp.pdb.gimp_image_get_layer_by_name(image_dst, layer_name_dst)
     if layer_dst is None:
         raise LayerDoesNotExistException('Destination layer ' + layer_name_dst + ' does not exist.')
-    copy_or_merge_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_dst)
+    return copy_or_merge_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_dst)
 
 
 def reorder_layer(image, layer, position):
@@ -97,6 +102,7 @@ def merge_mask_layer(image_src, layer_name_src, image_dst, layer_name_dst, mask_
     :type layer_name_dst: str
     :type mask_foreground_color: int
     :type position_dst: int
+    :rtype: gimp.Layer
     """
     if mask_foreground_color not in [0, 1]:
         raise ValueError('Mask foreground color must be 1 for white and 0 for black')
@@ -156,6 +162,7 @@ def merge_mask_layer(image_src, layer_name_src, image_dst, layer_name_dst, mask_
 
     layer_dst.get_pixel_rgn(0, 0, layer_dst.width, layer_dst.height)[:, :] = content_merged.tobytes()
     reorder_layer(image_dst, layer_dst, position_dst)
+    return layer_dst
 
 
 def remove_layer(image, layer_name):
@@ -179,6 +186,7 @@ def add_layer_from_numpy(image, numpy_file, name, width, height, type, position=
     :type opacity: float
     :type mode: int
     :type visible: bool
+    :rtype: gimp.Layer
     """
     layer = gimp.pdb.gimp_layer_new(image, width, height, type, name, opacity, mode)
     layer.visible = visible
@@ -188,6 +196,28 @@ def add_layer_from_numpy(image, numpy_file, name, width, height, type, position=
     region[:, :] = bytes
 
     gimp.pdb.gimp_image_add_layer(image, layer, position)
+    return layer
+
+
+def add_layer_from_file(image, image_file, name, position=0, opacity=100., mode=gimpenums.NORMAL_MODE, visible=True):
+    """"
+    :type image: gimp.Image
+    :type image_file: str
+    :type name: str
+    :type position: int
+    :type opacity: float
+    :type mode: int
+    :type visible: bool
+    :rtype: gimp.Layer
+    """
+    image_from_file = gimp.pdb.gimp_file_load(image_file, image_file)
+
+    layer = copy_layer(image_from_file, image_from_file.layers[0].name, image, name, position)
+    layer.opacity = opacity
+    layer.mode = mode
+    layer.visible = visible
+
+    return gimp.pdb.gimp_image_add_layer(image, layer, position)
 
 
 def convert_layer_to_numpy(image, layer_name):
