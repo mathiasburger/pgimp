@@ -6,10 +6,12 @@
 Interacting with gimp in python3.
 
 Use Cases:
+* Autocompletion for writing gimp scripts.
+* Batch creation or update of gimp files or data extraction from gimp files.
 * Workflows where machine learning data has to be annotated. Raw data 
-can be converted to gimp files where the annotation process can happen (gimp's thresholding tools 
-etc. make it easy to do annotation for pixelwise segmentation). After the masks are created, they 
-can be converted back to e.g. numpy files.
+  can be converted to gimp files where the annotation process can happen (gimp's thresholding tools 
+  etc. make it easy to do annotation for pixelwise segmentation). After the masks are created, they 
+  can be converted back to e.g. numpy files.
 
 Read the [documentation](https://pgimp.readthedocs.io/en/latest/) for details on what pgimp can 
 do for you and how it is achieved. Every single public method comes with a short working example!

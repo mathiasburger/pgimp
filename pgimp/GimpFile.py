@@ -267,6 +267,44 @@ class GimpFile:
         self._gsr.execute(code, timeout_in_seconds=self._short_running_timeout_in_seconds)
         return self
 
+    def create_from_file(self, file: str, layer_name: str='Background') -> 'GimpFile':
+        """
+        Create a new gimp file by importing an image from another format.
+
+        Example:
+
+        >>> from pgimp.GimpFile import GimpFile
+        >>> from pgimp.util.TempFile import TempFile
+        >>> import numpy as np
+        >>> with TempFile('.xcf') as xcf, TempFile('.png') as png, TempFile('.xcf') as from_png:
+        ...     gimp_file = GimpFile(xcf) \\
+        ...         .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8)) \\
+        ...         .add_layer_from_numpy('Foreground', np.ones(shape=(1, 1), dtype=np.uint8)*255, opacity=50.) \\
+        ...         .export(png)  # saved as grayscale with alpha (identify -format '%[channels]' FILE)
+        ...     GimpFile(from_png).create_from_file(png, layer_name='Image').layer_to_numpy('Image')
+        array([[[127, 255]]], dtype=uint8)
+
+        :param file: File to import into gimp.
+        :param layer_name: The layer name for the data to be imported.
+        :return:
+        """
+        code = textwrap.dedent(
+            """
+            from pgimp.gimp.file import save_xcf
+            from pgimp.gimp.image import create_from_file
+            image = create_from_file('{0:s}')
+            image.layers[0].name = '{2:s}'
+            save_xcf(image, '{1:s}')
+            """
+        ).format(
+            escape_single_quotes(file),
+            escape_single_quotes(self._file),
+            escape_single_quotes(layer_name)
+        )
+
+        self._gsr.execute(code, timeout_in_seconds=self._short_running_timeout_in_seconds)
+        return self
+
     def copy(self, filename: str) -> 'GimpFile':
         """
         Copies a gimp file.
@@ -608,3 +646,41 @@ class GimpFile:
 
         dimensions = self._gsr.execute_and_parse_json(code, timeout_in_seconds=self._short_running_timeout_in_seconds)
         return tuple(dimensions)
+
+    def export(self, file: str) -> 'GimpFile':
+        """
+        Export a gimp file to another file format based on the file extension.
+
+        Gimp will apply defaults for encoding to the desired format. E.g. png is saved including an alpha channel
+        and jpg has no alpha channel but will use default compression settings.
+
+        Example:
+
+        >>> from pgimp.GimpFile import GimpFile
+        >>> from pgimp.util.TempFile import TempFile
+        >>> import numpy as np
+        >>> with TempFile('.xcf') as xcf, TempFile('.png') as png, TempFile('.xcf') as from_png:
+        ...     gimp_file = GimpFile(xcf) \\
+        ...         .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8)) \\
+        ...         .add_layer_from_numpy('Foreground', np.ones(shape=(1, 1), dtype=np.uint8)*255, opacity=50.) \\
+        ...         .export(png)  # saved as grayscale with alpha (identify -format '%[channels]' FILE)
+        ...     GimpFile(from_png).create_from_file(png, layer_name='Image').layer_to_numpy('Image')
+        array([[[127, 255]]], dtype=uint8)
+
+        :param file: Filename including the desired extension to export to.
+        :return: :py:class:`~pgimp.GimpFile.GimpFile`
+        """
+
+        code = textwrap.dedent(
+            """
+            import gimp
+            import gimpenums
+            from pgimp.gimp.file import XcfFile
+            with XcfFile('{0:s}') as image:
+                merged = gimp.pdb.gimp_image_merge_visible_layers(image, gimpenums.CLIP_TO_IMAGE)
+                gimp.pdb.gimp_file_save(image, merged, '{1:s}', '{1:s}')
+            """
+        ).format(escape_single_quotes(self._file), escape_single_quotes(file))
+
+        self._gsr.execute(code, timeout_in_seconds=self._short_running_timeout_in_seconds)
+        return self
