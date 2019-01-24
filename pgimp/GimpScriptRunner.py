@@ -395,8 +395,13 @@ class GimpScriptRunner:
         children = {}
         while children != expected_processes:
             process_children = process.children(recursive=True)
-            children = {child.name().lower() if not child.name().lower().startswith('python') else 'python'
-                        for child in process_children if child.is_running()}
+            children_list = []
+            for child in process_children:
+                try:
+                    children_list.append(child.name().lower() if not child.name().lower().startswith('python') else 'python')
+                except psutil.NoSuchProcess:
+                    pass  # vanishing processes are ok
+            children = {*children_list}
             time.sleep(0.1)
             if time.time() - current_time > CHILD_PROCESS_START_TIMEOUT:
                 self._kill_non_terminated_processes(process_children)
