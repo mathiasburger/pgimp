@@ -38,7 +38,8 @@ the pip packages `numpy` and `typing` for python2 need to be installed.
 
 ### Linux
 
-On Linux, install the gimp package, e.g. `sudo apt-get install gimp` for Debian/Ubuntu. 
+On Linux, install the gimp package, e.g. `sudo apt-get install gimp` for Debian/Ubuntu. In order to run headless, 
+install xfvb, e.g. `sudo apt-get install xvfb`.
 
 ### Mac OS
 

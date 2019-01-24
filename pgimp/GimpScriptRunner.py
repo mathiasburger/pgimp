@@ -29,6 +29,8 @@ FLAG_NO_FONTS = '-f'
 FLAG_NON_INTERACTIVE = '-b'
 FLAG_FROM_STDIN = '-'
 
+CHILD_PROCESS_START_TIMEOUT = 10
+
 JsonType = Union[None, bool, int, float, str, list, dict]
 
 
@@ -329,22 +331,21 @@ class GimpScriptRunner:
 
         code = initializer + extend_path + code + quit_gimp
 
-        children = []
         if is_xvfb_present():
-            process = psutil.Process(self._gimp_process.pid)
-            current_time = time.time()
-            while len(children) != 4:  # Xvfb, gimp, script-fu, python
-                children = process.children(recursive=True)
-                time.sleep(0.1)
-                if time.time() - current_time > 5:
-                    raise GimpScriptExecutionTimeoutException('Child processes Xvfb, gimp, script-fu, python were not spawned in time.')
+            expected_processes = {'xvfb', 'gimp', 'script-fu', 'python'}
+        else:
+            expected_processes = {'script-fu', 'python'}
+
+        process = psutil.Process(self._gimp_process.pid)
+        process_children = self._wait_for_child_processes_to_start(process, expected_processes)
+
         try:
             stdout, stderr = self._gimp_process.communicate(code.encode(), timeout=timeout_in_seconds)
         except subprocess.TimeoutExpired as exception:
             self._gimp_process.kill()
             raise GimpScriptExecutionTimeoutException(str(exception) + '\nCode that was executed:\n' + code)
         finally:
-            self._kill_non_terminated_processes(children)
+            self._kill_non_terminated_processes(process_children)
 
         if binary:
             stdout_content = stdout
@@ -387,6 +388,21 @@ class GimpScriptRunner:
         if output_stream:
             return None
         return strip_gimp_warnings(stdout_content)
+
+    def _wait_for_child_processes_to_start(self, process, expected_processes):
+        current_time = time.time()
+        process_children = []
+        children = {}
+        while children != expected_processes:
+            process_children = process.children(recursive=True)
+            children = {child.name().lower() if not child.name().lower().startswith('python') else 'python'
+                        for child in process_children}
+            time.sleep(0.1)
+            if time.time() - current_time > CHILD_PROCESS_START_TIMEOUT:
+                self._kill_non_terminated_processes(process_children)
+                raise GimpScriptExecutionTimeoutException(
+                    'Child processes ' + ', '.join(expected_processes) + ' were not spawned in time.')
+        return process_children
 
     def _kill_non_terminated_processes(self, processes: List[psutil.Process]):
         for process in processes:
