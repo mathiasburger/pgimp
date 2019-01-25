@@ -30,7 +30,10 @@ def test_execute_file():
 
 def test_execute_file_with_runtime_exception():
     tmpfile = mktemp(suffix='.py')
-    file.append(tmpfile, 'from pgimp.gimp.parameter import get_parameter; print(get_parameter("parameter"))\nprint(1/0)')
+    file.append(
+        tmpfile,
+        'from pgimp.gimp.parameter import get_parameter; print(get_parameter("parameter"))\nprint(1/0)'
+    )
 
     with pytest.raises(GimpScriptException) as exception:
         gsr.execute_file(tmpfile, parameters={'parameter': 'value'}, timeout_in_seconds=3)
@@ -67,22 +70,34 @@ def test_timeout():
 
 
 def test_execute_and_parse_json():
-    result = gsr.execute_and_parse_json('from pgimp.gimp.parameter import return_json; return_json(["a", "b", "c"])', timeout_in_seconds=3)
+    result = gsr.execute_and_parse_json(
+        'from pgimp.gimp.parameter import return_json; return_json(["a", "b", "c"])',
+        timeout_in_seconds=3
+    )
 
     assert ["a", "b", "c"] == result
 
 
 def test_execute_and_parse_bool():
-    result = gsr.execute_and_parse_json('from pgimp.gimp.parameter import return_bool; return_bool("truthy")', timeout_in_seconds=3)
+    result = gsr.execute_and_parse_json(
+        'from pgimp.gimp.parameter import return_bool; return_bool("truthy")',
+        timeout_in_seconds=3
+    )
     assert result is True
 
-    result = gsr.execute_and_parse_json('from pgimp.gimp.parameter import return_bool; return_bool("")', timeout_in_seconds=3)
+    result = gsr.execute_and_parse_json(
+        'from pgimp.gimp.parameter import return_bool; return_bool("")',
+        timeout_in_seconds=3
+    )
     assert result is False
 
 
 def test_import_from_pgimp_library():
     gimp_file = file.relative_to(__file__, 'test-resources/rgb.xcf')
-    out = gsr.execute('from pgimp.gimp.file import *\nimage = open_xcf(\'{:s}\')\nprint(image.layers[0].name)'.format(gimp_file), timeout_in_seconds=3)
+    out = gsr.execute(
+        'from pgimp.gimp.file import *\nimage = open_xcf(\'{:s}\')\nprint(image.layers[0].name)'.format(gimp_file),
+        timeout_in_seconds=3
+    )
 
     assert 'Blue\n' == out
 
@@ -141,13 +156,28 @@ def test_execute_binary():
 
 
 def test_strip_gimp_warnings():
-    warnings = '\n(gimp:5857): GLib-GObject-WARNING **: g_object_set_valist: object class \'GeglConfig\' has no property named \'cache-size\'\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E1A00 from "gimp:point-layer-mode" to "gimp:dissolve-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E1E10 from "gimp:point-layer-mode" to "gimp:behind-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E2200 from "gimp:point-layer-mode" to "gimp:multiply-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3250 from "gimp:point-layer-mode" to "gimp:screen-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3620 from "gimp:point-layer-mode" to "gimp:overlay-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3A50 from "gimp:point-layer-mode" to "gimp:difference-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3E10 from "gimp:point-layer-mode" to "gimp:addition-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E4250 from "gimp:point-layer-mode" to "gimp:subtract-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E4640 from "gimp:point-layer-mode" to "gimp:darken-only-mode"\n'
+    warnings = '\n(gimp:5857): GLib-GObject-WARNING **: g_object_set_valist: object class \'GeglConfig\' has no ' \
+               'property named \'cache-size\'\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name ' \
+               'of operation class 0x28E1A00 from "gimp:point-layer-mode" to "gimp:dissolve-mode"\n\n(gimp:5857): ' \
+               'GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E1E10 from ' \
+               '"gimp:point-layer-mode" to "gimp:behind-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: ' \
+               'Cannot change name of operation class 0x28E2200 from "gimp:point-layer-mode" to "gimp:multiply-mode"' \
+               '\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3250 ' \
+               'from "gimp:point-layer-mode" to "gimp:screen-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **:' \
+               ' Cannot change name of operation class 0x28E3620 from "gimp:point-layer-mode" to "gimp:overlay-mode"' \
+               '\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3A50 ' \
+               'from "gimp:point-layer-mode" to "gimp:difference-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING' \
+               ' **: Cannot change name of operation class 0x28E3E10 from "gimp:point-layer-mode" to '\
+               '"gimp:addition-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of ' \
+               'operation class 0x28E4250 from "gimp:point-layer-mode" to "gimp:subtract-mode"\n\n(gimp:5857): ' \
+               'GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E4640 from ' \
+               '"gimp:point-layer-mode" to "gimp:darken-only-mode"\n'
+
     desired_output = ' my result\n\nblah'
 
     input = warnings + desired_output
     assert desired_output == strip_gimp_warnings(input)
 
-    warnings = '\n(gimp:5857): GLib-GObject-WARNING **: g_object_set_valist: object class \'GeglConfig\' has no property named \'cache-size\'\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E1A00 from "gimp:point-layer-mode" to "gimp:dissolve-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E1E10 from "gimp:point-layer-mode" to "gimp:behind-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E2200 from "gimp:point-layer-mode" to "gimp:multiply-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3250 from "gimp:point-layer-mode" to "gimp:screen-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3620 from "gimp:point-layer-mode" to "gimp:overlay-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3A50 from "gimp:point-layer-mode" to "gimp:difference-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3E10 from "gimp:point-layer-mode" to "gimp:addition-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E4250 from "gimp:point-layer-mode" to "gimp:subtract-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E4640 from "gimp:point-layer-mode" to "gimp:darken-only-mode"\n'
     desired_output = '(gimp:THIS SHOULD NOT BE EXCLUDED BECAUSE OF ONLY ONE NEWLINE INSTEAD OF TWO\n\nblah'
 
     input = warnings + desired_output

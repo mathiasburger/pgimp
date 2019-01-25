@@ -212,14 +212,14 @@ class GimpFile:
             from pgimp.gimp.file import save_xcf
             from pgimp.gimp.colormap import *  # necessary for predefined colormaps
             from pgimp.gimp.layer import add_layer_from_numpy
-        
+
             cmap = {0:s}
             image = gimp.pdb.gimp_image_new({1:d}, {2:d}, gimpenums.GRAY)
             palette_name = gimp.pdb.gimp_palette_new('colormap')
             for i in range(0, cmap.shape[0]):
                 gimp.pdb.gimp_palette_add_entry(palette_name, str(i), (int(cmap[i][0]), int(cmap[i][1]), int(cmap[i][2])))
             gimp.pdb.gimp_convert_indexed(image, gimpenums.NO_DITHER, gimpenums.CUSTOM_PALETTE, 256, False, False, palette_name)
-            
+
             add_layer_from_numpy(image, '{5:s}', '{4:s}', image.width, image.height, gimpenums.INDEXED_IMAGE)
             save_xcf(image, '{3:s}')
             """
@@ -267,7 +267,7 @@ class GimpFile:
         self._gsr.execute(code, timeout_in_seconds=self._short_running_timeout_in_seconds)
         return self
 
-    def create_from_file(self, file: str, layer_name: str='Background') -> 'GimpFile':
+    def create_from_file(self, file: str, layer_name: str = 'Background') -> 'GimpFile':
         """
         Create a new gimp file by importing an image from another format.
 
@@ -372,7 +372,7 @@ class GimpFile:
                 from pgimp.gimp.file import open_xcf
                 from pgimp.gimp.parameter import get_json
                 from pgimp.gimp.layer import convert_layers_to_numpy
-    
+
                 np_buffer = convert_layers_to_numpy(open_xcf('{0:s}'), get_json('layer_names', '[]'))
                 np.save(sys.stdout, np_buffer)
                 """,
@@ -383,7 +383,14 @@ class GimpFile:
 
         return np.load(io.BytesIO(bytes))
 
-    def add_layer_from_numpy(self, layer_name: str, layer_content: np.ndarray, opacity: float=100.0, visible: bool=True, position: int=0, type: LayerType=None) -> 'GimpFile':
+    def add_layer_from_numpy(
+            self,
+            layer_name: str,
+            layer_content: np.ndarray,
+            opacity: float = 100.0,
+            visible: bool = True, position: int = 0,
+            type: LayerType = None
+    ) -> 'GimpFile':
         """
         Adds a new layer to the gimp file from numpy data, usually as unsigned 8 bit integers.
 
@@ -421,7 +428,8 @@ class GimpFile:
             from pgimp.gimp.layer import add_layer_from_numpy
 
             with XcfFile('{2:s}', save=True) as image:
-                add_layer_from_numpy(image, '{5:s}', '{4:s}', {0:d}, {1:d}, {3:d}, {8:d}, float({7:s}), gimpenums.NORMAL_MODE, {6:s})
+                add_layer_from_numpy(image, '{5:s}', '{4:s}', {0:d}, {1:d}, {3:d}, {8:d}, float({7:s}), 
+                                     gimpenums.NORMAL_MODE, {6:s})
             """
         ).format(
             width,
@@ -463,7 +471,14 @@ class GimpFile:
 
         return height, width, depth, image_type, layer_type
 
-    def add_layer_from_file(self, other_file: 'GimpFile', name: str, new_name: str=None, new_type: GimpFileType=GimpFileType.RGB, new_position: int=0) -> 'GimpFile':
+    def add_layer_from_file(
+            self,
+            other_file: 'GimpFile',
+            name: str,
+            new_name: str = None,
+            new_type: GimpFileType = GimpFileType.RGB,
+            new_position: int = 0
+    ) -> 'GimpFile':
         """
         Adds a new layer to the gimp file from another gimp file.
 
@@ -490,7 +505,8 @@ class GimpFile:
         array([[[  0, 255,   0]]], dtype=uint8)
 
         :param other_file: The gimp file from which to copy the layer into the current image.
-        :param name: The layer name in the other file to copy over to the current file. Also the layer name in the current file if no new name is set.
+        :param name: The layer name in the other file to copy over to the current file. Also the layer name
+                     in the current file if no new name is set.
         :param new_name: The new layer name in the current image. Same as the layer name in the other file if not set.
         :param new_type: The layer type to create in the current image. E.g. rgb or grayscale.
         :param new_position: Position in the stack of layers. On top = 0, bottom = number of layers.
