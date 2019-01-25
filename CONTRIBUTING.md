@@ -51,6 +51,8 @@ Execute the following to run quality checks (needs pylint which can be installed
 ./quality.sh
 ```
 
+For detailed analysis [Gamma](https://mburger.os.mygamma.io) is used.
+
 ## Publishing
 
 Is done by the maintainer using the following guidelines:
