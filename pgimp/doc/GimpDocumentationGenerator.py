@@ -8,7 +8,7 @@ from collections import OrderedDict
 from pgimp.GimpScriptRunner import GimpScriptRunner
 from pgimp.doc.output.Output import Output
 
-gimpTypeMapping = {
+GIMP_TYPE_MAPPING = {
     0: 'int',  # PDB-INT32 (0)
     1: 'int',  # PDB-INT16 (1)
     2: 'int',  # PDB-INT8 (2)
@@ -38,7 +38,7 @@ See also gimp-procedural-db-proc-arg doc.
 
 STANDARD_TYPES = list(range(0, 9+1))
 UNKNOWN_GIMP_CLASSES = [10, 17, 18, 21]
-KNOWN_GIMP_CLASSES = [i for i in gimpTypeMapping if i not in UNKNOWN_GIMP_CLASSES and i not in STANDARD_TYPES]
+KNOWN_GIMP_CLASSES = [i for i in GIMP_TYPE_MAPPING if i not in UNKNOWN_GIMP_CLASSES and i not in STANDARD_TYPES]
 
 
 class GimpDocumentationGenerator:
@@ -57,7 +57,7 @@ class GimpDocumentationGenerator:
         self._document_gimpfu_constants()
 
     def _document_known_gimp_classes(self):
-        gimp_classes = set([gimpTypeMapping[i] for i in KNOWN_GIMP_CLASSES])
+        gimp_classes = set([GIMP_TYPE_MAPPING[i] for i in KNOWN_GIMP_CLASSES])
         ordered_gimp_classes = self._get_ordered_gimp_classes()
         ordered_gimp_classes = [x for x in ordered_gimp_classes if x in gimp_classes]
         for gimp_class in ordered_gimp_classes:
@@ -107,7 +107,7 @@ class GimpDocumentationGenerator:
         return self._ordered_gimp_classes
 
     def _document_unknown_gimp_classes(self):
-        gimp_classes = [gimpTypeMapping[i] for i in UNKNOWN_GIMP_CLASSES]
+        gimp_classes = [GIMP_TYPE_MAPPING[i] for i in UNKNOWN_GIMP_CLASSES]
         ordered_gimp_classes = self._get_ordered_gimp_classes()
         ordered_gimp_classes = [x for x in ordered_gimp_classes if x in gimp_classes]
         for gimp_class in ordered_gimp_classes:
@@ -116,12 +116,12 @@ class GimpDocumentationGenerator:
     def _document_pdb_module(self):
         self._output.start_module('pdb')
         pdb_dump = textwrap.dedent(
-            """        
+            """
             from collections import OrderedDict
             from pgimp.gimp.parameter import return_json
-                
+
             result = OrderedDict()
-            
+
             num_matches, procedure_names = pdb.gimp_procedural_db_query("", "", "", "", "", "", "")
             methods = sorted(procedure_names)
             for method in methods:
@@ -143,7 +143,7 @@ class GimpDocumentationGenerator:
                     result[method]['vals'][val_name] = OrderedDict()
                     result[method]['vals'][val_name]['type'] = val_type
                     result[method]['vals'][val_name]['desc'] = val_desc
-                 
+
             return_json(result)
             """)
         methods = self._execute(pdb_dump, 20)
@@ -163,22 +163,22 @@ class GimpDocumentationGenerator:
             for arg_name in methods[method]['args'].keys():
                 arg_type = methods[method]['args'][arg_name]['type']
                 arg_desc = methods[method]['args'][arg_name]['desc']
-                parameters[arg_name] = (gimpTypeMapping[arg_type], arg_desc or '')
+                parameters[arg_name] = (GIMP_TYPE_MAPPING[arg_type], arg_desc or '')
 
             return_values = OrderedDict()
             for val_name in methods[method]['vals'].keys():
                 val_type = methods[method]['vals'][val_name]['type']
                 val_desc = methods[method]['vals'][val_name]['desc']
-                return_values[val_name] = (gimpTypeMapping[val_type], val_desc or '')
+                return_values[val_name] = (GIMP_TYPE_MAPPING[val_type], val_desc or '')
 
             self._output.method(method, description, parameters, return_values)
 
-    def _execute(self, string: str, timeout_in_seconds: int=10):
+    def _execute(self, string: str, timeout_in_seconds: int = 10):
         return self._gsr.execute_and_parse_json(string, timeout_in_seconds=timeout_in_seconds)
 
     def _document_gimp_enums(self):
         enum_dump = textwrap.dedent(
-            """        
+            """
             import gimpenums
             from pgimp.gimp.parameter import return_json
 
@@ -193,7 +193,7 @@ class GimpDocumentationGenerator:
 
     def _document_gimpfu_constants(self):
         const_dump = textwrap.dedent(
-            """        
+            """
             import gimpfu
             from pgimp.gimp.parameter import return_json
 

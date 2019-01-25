@@ -7,7 +7,7 @@ import textwrap
 from collections import OrderedDict
 from typing import Tuple, MutableMapping, Union, List, Any
 
-from pgimp.doc.GimpDocumentationGenerator import gimpTypeMapping, KNOWN_GIMP_CLASSES, UNKNOWN_GIMP_CLASSES
+from pgimp.doc.GimpDocumentationGenerator import GIMP_TYPE_MAPPING, KNOWN_GIMP_CLASSES, UNKNOWN_GIMP_CLASSES
 from pgimp.doc.output.Output import Output
 from pgimp.util import file
 
@@ -26,19 +26,19 @@ class OutputPythonSkeleton(Output):
         self._add_file(name)
         self._append('from typing import List, Tuple\n')
         self._append('from gimp import ' + ', '.join(
-            [gimpTypeMapping[i] for i in KNOWN_GIMP_CLASSES + UNKNOWN_GIMP_CLASSES]
+            [GIMP_TYPE_MAPPING[i] for i in KNOWN_GIMP_CLASSES + UNKNOWN_GIMP_CLASSES]
         ) + '\n')
 
     def method(
-        self,
-        method: str,
-        description: str,
-        parameters: Union[MutableMapping[str, Tuple[str, str]], OrderedDict],
-        return_values: Union[MutableMapping[str, Tuple[str, str]], OrderedDict],
+            self,
+            method: str,
+            description: str,
+            parameters: Union[MutableMapping[str, Tuple[str, str]], OrderedDict],
+            return_values: Union[MutableMapping[str, Tuple[str, str]], OrderedDict],
     ):
         signature = pythonify_id(method)
         signature += '('
-        if len(parameters) > 0:
+        if parameters:
             last_parameter = next(reversed(parameters))
             for parameter in parameters:
                 signature += pythonify_id(parameter)
@@ -46,7 +46,7 @@ class OutputPythonSkeleton(Output):
                 if parameter != last_parameter:
                     signature += ', '
         signature += ')'
-        if len(return_values) > 0:
+        if return_values:
             signature += ' -> '
             last_return_value = next(reversed(return_values))
             if len(return_values) == 1:
@@ -62,12 +62,12 @@ class OutputPythonSkeleton(Output):
         documentation = '"""\n'
         if description:
             documentation += description + '\n'
-        if description and len(parameters) > 0:
+        if description and parameters:
             documentation += '\n'
-        if len(parameters) > 0:
+        if parameters:
             for parameter in parameters:
                 documentation += ':param ' + pythonify_id(parameter) + ': ' + parameters[parameter][1] + '\n'
-        if len(return_values) > 0:
+        if return_values:
             documentation += ':return: ' + ', '.join(list(map(pythonify_id, return_values.keys()))) + '\n'
         documentation += '"""'
 

@@ -4,7 +4,7 @@ import shutil
 from setuptools import setup, find_packages
 from setuptools.command.build_py import build_py
 
-from pgimp import __version__, project, author
+from pgimp import __version__, PROJECT, AUTHOR
 from pgimp.doc.GimpDocumentationGenerator import GimpDocumentationGenerator
 from pgimp.doc.output.OutputPythonSkeleton import OutputPythonSkeleton
 from pgimp.util import file
@@ -28,11 +28,11 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name=project,
+    name=PROJECT,
     version=__version__,
     description='Interacting with gimp in python3.',
     url='https://github.com/mabu-github/pgimp',
-    author=author,
+    author=AUTHOR,
     author_email='mathias.burger@gmail.com',
     long_description=long_description,
     long_description_content_type="text/markdown",

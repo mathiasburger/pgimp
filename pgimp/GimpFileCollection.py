@@ -19,21 +19,18 @@ class NonExistingPathComponentException(GimpException):
     """
     Indicates that a path should have had a specific component, e.g. prefix or suffix.
     """
-    pass
 
 
 class GimpMissingRequiredParameterException(GimpException):
     """
     Indicates that a parameter that is necessary for a gimp script is missing.
     """
-    pass
 
 
 class MissingFilesException(GimpException):
     """
     Indicates that files are missing.
     """
-    pass
 
 
 class MaskForegroundColor(Enum):
@@ -76,7 +73,7 @@ class GimpFileCollection:
 
         :return: Common path prefix for all files including a trailing slash.
         """
-        if len(self._files) == 0:
+        if not self._files:
             return ''
         if len(self._files) == 1:
             return os.path.dirname(self._files[0]) + '/'
@@ -85,7 +82,7 @@ class GimpFileCollection:
             return commonprefix
         return os.path.dirname(commonprefix) + '/'
 
-    def replace_prefix(self, prefix: str, new_prefix: str='') -> 'GimpFileCollection':
+    def replace_prefix(self, prefix: str, new_prefix: str = '') -> 'GimpFileCollection':
         """
         Returns a new collection with filenames where the old prefix is replaced by a new prefix.
 
@@ -102,7 +99,7 @@ class GimpFileCollection:
         """
         return self.replace_path_components(prefix=prefix, new_prefix=new_prefix)
 
-    def replace_suffix(self, suffix: str, new_suffix: str='') -> 'GimpFileCollection':
+    def replace_suffix(self, suffix: str, new_suffix: str = '') -> 'GimpFileCollection':
         """
         Returns a new collection with filenames that do not contain the suffix.
 
@@ -119,7 +116,13 @@ class GimpFileCollection:
         """
         return self.replace_path_components(suffix=suffix, new_suffix=new_suffix)
 
-    def replace_path_components(self, prefix: str = '', new_prefix: str = '', suffix: str = '', new_suffix: str = '') -> 'GimpFileCollection':
+    def replace_path_components(
+            self,
+            prefix: str = '',
+            new_prefix: str = '',
+            suffix: str = '',
+            new_suffix: str = ''
+    ) -> 'GimpFileCollection':
         """
         Returns a new collection with replaced path components.
 
@@ -144,7 +147,9 @@ class GimpFileCollection:
             new_suffix += EXTENSION
         check = list(filter(lambda file: file.startswith(prefix) and file.endswith(suffix), files))
         if len(check) != len(files):
-            raise NonExistingPathComponentException('All files must start with the given prefix and end with the given suffix.')
+            raise NonExistingPathComponentException(
+                'All files must start with the given prefix and end with the given suffix.'
+            )
 
         prefix_length = len(prefix)
         files = list(map(lambda file: new_prefix + file[prefix_length:], files))
@@ -177,7 +182,7 @@ class GimpFileCollection:
         """
         return list(filter(lambda file: predicate(self._gimp_file_factory(file).layers()), self._files))
 
-    def find_files_containing_layer_by_name(self, layer_name: str, timeout_in_seconds: float=None) -> List[str]:
+    def find_files_containing_layer_by_name(self, layer_name: str, timeout_in_seconds: float = None) -> List[str]:
         """
         Find files that contain a layer that matching the given name.
 
@@ -213,7 +218,7 @@ class GimpFileCollection:
             """
         ).format(escape_single_quotes(layer_name)), timeout_in_seconds=timeout_in_seconds)
 
-    def find_files_by_script(self, script_predicate: str, timeout_in_seconds: float=None) -> List[str]:
+    def find_files_by_script(self, script_predicate: str, timeout_in_seconds: float = None) -> List[str]:
         """
         Find files matching certain criteria by executing a gimp script.
 
@@ -289,21 +294,25 @@ class GimpFileCollection:
                 script_predicate.replace('__file__', escape_single_quotes(file)),
                 timeout_in_seconds=timeout_in_seconds
             ), self._files))
-        elif "get_json('__files__')" in script_predicate and "return_json(" in script_predicate:
+        if "get_json('__files__')" in script_predicate and "return_json(" in script_predicate:
             return self._gsr.execute_and_parse_json(
                 script_predicate,
                 parameters={'__files__': self._files},
                 timeout_in_seconds=timeout_in_seconds
             )
-        else:
-            raise GimpMissingRequiredParameterException(
-                'Either an image file must be opened with open_xcf(\'__file__\') ' +
-                'and the result is returned with return_bool() ' +
-                'or a list of files must be retrieved by get_json(\'__files__\') ' +
-                'and the result is returned with return_json().'
-            )
+        raise GimpMissingRequiredParameterException(
+            'Either an image file must be opened with open_xcf(\'__file__\') ' +
+            'and the result is returned with return_bool() ' +
+            'or a list of files must be retrieved by get_json(\'__files__\') ' +
+            'and the result is returned with return_json().'
+        )
 
-    def execute_script_and_return_json(self, script: str, parameters: dict=None, timeout_in_seconds: float=None) -> Union[JsonType, Dict[str, JsonType]]:
+    def execute_script_and_return_json(
+            self,
+            script: str,
+            parameters: dict = None,
+            timeout_in_seconds: float = None
+    ) -> Union[JsonType, Dict[str, JsonType]]:
         """
         Execute a gimp script on the collection.
 
@@ -428,17 +437,24 @@ class GimpFileCollection:
                 'and the result is returned with return_json().'
             )
 
-    def copy_layer_from(self, other_collection: 'GimpFileCollection', layer_name: str, layer_position: int=0, other_can_be_smaller: bool=False, timeout_in_seconds: float=None) -> 'GimpFileCollection':
+    def copy_layer_from(
+            self,
+            other_collection: 'GimpFileCollection',
+            layer_name: str,
+            layer_position: int = 0,
+            other_can_be_smaller: bool = False,
+            timeout_in_seconds: float = None
+    ) -> 'GimpFileCollection':
         """
         Copies a layer from another collection into this collection.
 
         Example:
 
-        >>> import tempfile
+        >>> from tempfile import TemporaryDirectory
         >>> import numpy as np
         >>> from pgimp.GimpFileCollection import GimpFileCollection
         >>> from pgimp.GimpFile import GimpFile
-        >>> with tempfile.TemporaryDirectory('_src') as srcdir, tempfile.TemporaryDirectory('_dst') as dstdir:  # doctest: +ELLIPSIS
+        >>> with TemporaryDirectory('_src') as srcdir, TemporaryDirectory('_dst') as dstdir:  # doctest: +ELLIPSIS
         ...     src_1 = GimpFile(os.path.join(srcdir, 'file1.xcf')) \\
         ...         .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8)) \\
         ...         .add_layer_from_numpy('White', np.ones(shape=(1, 1), dtype=np.uint8)*255)
@@ -468,7 +484,8 @@ class GimpFileCollection:
         :param other_collection: The collection from which to take the layer.
         :param layer_name: Name of the layer to copy.
         :param layer_position: Layer position in the destination image.
-        :param other_can_be_smaller: Whether the other collection must at least contain all the elements of the current collection or not.
+        :param other_can_be_smaller: Whether the other collection must at least contain all the
+               elements of the current collection or not.
         :param timeout_in_seconds: Script execution timeout in seconds.
         :return: :py:class:`~pgimp.GimpFileCollection.GimpFileCollection`
         """
@@ -479,7 +496,7 @@ class GimpFileCollection:
         missing = set()
         if not other_can_be_smaller:
             missing = set(files_in_this_collection) - set(files_in_other_collection)
-        if len(missing) > 0:
+        if missing:
             raise MissingFilesException(
                 'The other collection is smaller than this collection by the following entries: ' +
                 ', '.join(missing)
@@ -491,24 +508,24 @@ class GimpFileCollection:
             from pgimp.gimp.parameter import get_json, get_string, get_int, get_bool, return_json
             from pgimp.gimp.layer import copy_or_merge_layer
             from pgimp.gimp.file import XcfFile
-            
+
             prefix_in_other_collection = get_string('prefix_in_other_collection')
             prefix_in_this_collection = get_string('prefix_in_this_collection')
             layer_name = get_string('layer_name')
             layer_position = get_int('layer_position')
             other_can_be_smaller = get_bool('other_can_be_smaller')
             files = get_json('__files__')
-            
+
             for file in files:
                 file = file[len(prefix_in_this_collection):]
                 file_src = os.path.join(prefix_in_other_collection, file)
                 file_dst = os.path.join(prefix_in_this_collection, file)
                 if other_can_be_smaller and not os.path.exists(file_src):
                     continue
-                
+
                 with XcfFile(file_src) as image_src, XcfFile(file_dst, save=True) as image_dst:
                     copy_or_merge_layer(image_src, layer_name, image_dst, layer_name, layer_position)
-                
+
             return_json(None)
             """
         )
@@ -526,7 +543,13 @@ class GimpFileCollection:
         )
         return self
 
-    def merge_mask_layer_from(self, other_collection: 'GimpFileCollection', layer_name: str, mask_foreground_color: MaskForegroundColor=MaskForegroundColor.WHITE, layer_position: int=0, timeout_in_seconds: float=None):
+    def merge_mask_layer_from(
+            self, other_collection: 'GimpFileCollection',
+            layer_name: str,
+            mask_foreground_color: MaskForegroundColor = MaskForegroundColor.WHITE,
+            layer_position: int = 0,
+            timeout_in_seconds: float = None
+    ):
         """
         Merge masks together. Masks should contain grayscale values or have an rgb gray value (r, g, b)
         with r == g == b. In case of rgb, the componentwise minimum or maximum will be taken depending
@@ -535,11 +558,11 @@ class GimpFileCollection:
 
         Example:
 
-        >>> import tempfile
+        >>> from tempfile import TemporaryDirectory
         >>> import numpy as np
         >>> from pgimp.GimpFileCollection import GimpFileCollection
         >>> from pgimp.GimpFile import GimpFile
-        >>> with tempfile.TemporaryDirectory('_src') as srcdir, tempfile.TemporaryDirectory('_dst') as dstdir:  # doctest: +ELLIPSIS
+        >>> with TemporaryDirectory('_src') as srcdir, TemporaryDirectory('_dst') as dstdir:  # doctest: +ELLIPSIS
         ...     src_1 = GimpFile(os.path.join(srcdir, 'file1.xcf')) \\
         ...         .create('Mask', np.array([[255, 0]], dtype=np.uint8))
         ...
@@ -551,7 +574,8 @@ class GimpFileCollection:
         ...     src_collection = GimpFileCollection([src_1.get_file()])
         ...     dst_collection = GimpFileCollection([dst_1.get_file(), dst_2.get_file()])
         ...
-        ...     dst_collection.merge_mask_layer_from(src_collection, 'Mask', MaskForegroundColor.WHITE, timeout_in_seconds=10)
+        ...     dst_collection.merge_mask_layer_from(
+        ...         src_collection, 'Mask', MaskForegroundColor.WHITE, timeout_in_seconds=10)
         ...
         ...     np.all(dst_1.layer_to_numpy('Mask') == [[255], [255]]) \\
         ...         and ['Mask'] == dst_1.layer_names() \\
@@ -563,6 +587,8 @@ class GimpFileCollection:
 
         :param other_collection: The collection from which to merge the mask.
         :param layer_name: Name of the layer to copy.
+        :param mask_foreground_color: when white, the maximum is taken, when black, the minimum values are taken
+               when merging
         :param layer_position: Layer position in the destination image.
         :param timeout_in_seconds: Script execution timeout in seconds.
         :return: :py:class:`~pgimp.GimpFileCollection.GimpFileCollection`
@@ -591,7 +617,14 @@ class GimpFileCollection:
                 if not os.path.exists(file_src):
                     continue
                 with XcfFile(file_src) as image_src, XcfFile(file_dst, save=True) as image_dst:
-                    merge_mask_layer(image_src, layer_name, image_dst, layer_name, mask_foreground_color, layer_position)
+                    merge_mask_layer(
+                        image_src,
+                        layer_name,
+                        image_dst,
+                        layer_name,
+                        mask_foreground_color,
+                        layer_position
+                    )
 
             return_json(None)
             """
@@ -621,8 +654,10 @@ class GimpFileCollection:
         >>> from tempfile import TemporaryDirectory
         >>> import numpy as np
         >>> with TemporaryDirectory('gfc') as tmpdir:
-        ...     gf1 = GimpFile(os.path.join(tmpdir, 'f1.xcf')).create('Background', np.zeros(shape=(2, 2), dtype=np.uint8))
-        ...     gf2 = GimpFile(os.path.join(tmpdir, 'f2.xcf')).create('Foreground', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     gf1 = GimpFile(os.path.join(tmpdir, 'f1.xcf')) \\
+        ...         .create('Background', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     gf2 = GimpFile(os.path.join(tmpdir, 'f2.xcf')) \\
+        ...         .create('Foreground', np.zeros(shape=(2, 2), dtype=np.uint8))
         ...     gfc = GimpFileCollection.create_from_pathname(tmpdir)
         ...     gfc.replace_prefix(gfc.get_prefix()).get_files()
         ['f1.xcf', 'f2.xcf']
@@ -657,15 +692,15 @@ class GimpFileCollection:
         >>> from tempfile import TemporaryDirectory
         >>> import numpy as np
         >>> with TemporaryDirectory('gfc') as tmpdir:
-        ...     gf1 = GimpFile(os.path.join(tmpdir, 'f1.xcf')).create('Background', np.zeros(shape=(2, 2), dtype=np.uint8))
-        ...     gf2 = GimpFile(os.path.join(tmpdir, 'f2.xcf')).create('Foreground', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     gf1 = GimpFile(os.path.join(tmpdir, 'f1.xcf')) \\
+        ...         .create('Background', np.zeros(shape=(2, 2), dtype=np.uint8))
+        ...     gf2 = GimpFile(os.path.join(tmpdir, 'f2.xcf')) \\
+        ...         .create('Foreground', np.zeros(shape=(2, 2), dtype=np.uint8))
         ...     gfc = GimpFileCollection.create_from_gimp_files([gf1, gf2])
         ...     gfc.replace_prefix(gfc.get_prefix()).get_files()
         ['f1.xcf', 'f2.xcf']
 
-        :param pathname: Can be a file with or without .xcf suffix, directory or recursive directory search.
-                         Allowed wildcards include '*' for matching zero or more characters
-                         and '**' for recursive search.
+        :param gimp_files: The list of gimp files to be contained in the collection.
         :return: A :py:class:`~pgimp.GimpFileCollection.GimpFileCollection` that contains an ordered list of filenames.
         """
 

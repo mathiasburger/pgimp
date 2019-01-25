@@ -21,6 +21,7 @@ from pgimp.util import file
 EXECUTABLE_XVFB = 'xvfb-run'
 FLAG_AUTO_SERVERNUM = '--auto-servernum'
 
+EXECUTABLE_GIMP_PATH = None
 EXECUTABLE_GIMP = 'gimp'
 FLAG_NO_INTERFACE = '-i'
 FLAG_PYTHON_INTERPRETER = '--batch-interpreter=python-fu-eval'
@@ -38,38 +39,31 @@ class GimpNotInstalledException(GimpException):
     """
     Indicates that gimp needs to be installed on the system in order for the software to work.
     """
-    pass
 
 
 class GimpScriptException(GimpException):
     """
     Indicates a general error that occurred while trying to execute the script.
     """
-    pass
 
 
 class GimpScriptExecutionTimeoutException(GimpException):
     """
     Thrown when the script execution time exceeds the specified timeout.
     """
-    pass
 
 
 class GimpUnsupportedOSException(GimpException):
     """
     Indicates that your operating system is not supported.
     """
-    pass
-
-
-_path_to_gimp_executable = None
 
 
 def path_to_gimp_executable():
-    global _path_to_gimp_executable
+    global EXECUTABLE_GIMP_PATH
 
-    if _path_to_gimp_executable is not None:
-        return _path_to_gimp_executable
+    if EXECUTABLE_GIMP_PATH is not None:
+        return EXECUTABLE_GIMP_PATH
 
     if sys.platform == 'darwin':
         locations = [
@@ -78,14 +72,14 @@ def path_to_gimp_executable():
         ]
         for location in locations:
             location = glob(location)
-            if len(location) > 0:
-                _path_to_gimp_executable = location[0]
-    elif sys.platform == 'linux' or sys.platform == 'linux2':
-        _path_to_gimp_executable = shutil.which(EXECUTABLE_GIMP)
+            if location:
+                EXECUTABLE_GIMP_PATH = location[0]
+    elif sys.platform in ['linux', 'linux2']:
+        EXECUTABLE_GIMP_PATH = shutil.which(EXECUTABLE_GIMP)
     else:
         raise GimpUnsupportedOSException('Your operating system "{:s}" is not supported.'.format(sys.platform))
 
-    return _path_to_gimp_executable
+    return EXECUTABLE_GIMP_PATH
 
 
 def is_gimp_present():
@@ -132,14 +126,22 @@ class GimpScriptRunner:
     >>> GimpScriptRunner().execute('print("Hello from within gimp")')
     'Hello from within gimp\\n'
     """
-    def __init__(self, environment: Dict[str, str]=None, working_directory=os.getcwd()) -> None:
+    def __init__(self, environment: Dict[str, str] = None, working_directory=os.getcwd()) -> None:
         super().__init__()
         self._gimp_process = None
         self._environment = environment or {}
         self._working_directory = working_directory
         self._file_to_execute = None
 
-    def execute_file(self, file: str, *, parameters: dict=None, timeout_in_seconds: float=None, output_stream: FileIO = None, error_stream: FileIO = None) -> Union[str, None]:
+    def execute_file(
+            self,
+            file: str,
+            *,
+            parameters: dict = None,
+            timeout_in_seconds: float = None,
+            output_stream: FileIO = None,
+            error_stream: FileIO = None
+    ) -> Union[str, None]:
         """
         Execute a script from a file within gimp's python interpreter.
 
@@ -156,7 +158,8 @@ class GimpScriptRunner:
         parameters = parameters or {}
         try:
             result = self.execute(
-                'from pgimp.gimp.parameter import get_parameter; exec(open(get_parameter("__script_file__")).read(), globals())',
+                'from pgimp.gimp.parameter import get_parameter;'
+                'exec(open(get_parameter("__script_file__")).read(), globals())',
                 {**parameters, '__script_file__': file},
                 timeout_in_seconds,
                 output_stream=output_stream,
@@ -166,7 +169,13 @@ class GimpScriptRunner:
         finally:
             self._file_to_execute = None
 
-    def execute_and_parse_json(self, string: str, parameters: dict=None, timeout_in_seconds: float=None, error_stream: FileIO = None) -> JsonType:
+    def execute_and_parse_json(
+            self,
+            string: str,
+            parameters: dict = None,
+            timeout_in_seconds: float = None,
+            error_stream: FileIO = None
+    ) -> JsonType:
         """
         Execute a given piece of code within gimp's python interpreter and decode the result to json.
 
@@ -188,7 +197,13 @@ class GimpScriptRunner:
         )
         return self._parse(result)
 
-    def execute_and_parse_bool(self, string: str, parameters: dict=None, timeout_in_seconds: float=None, error_stream: FileIO = None) -> bool:
+    def execute_and_parse_bool(
+            self,
+            string: str,
+            parameters: dict = None,
+            timeout_in_seconds: float = None,
+            error_stream: FileIO = None
+    ) -> bool:
         """
         Execute a given piece of code within gimp's python interpreter and decode the result to bool.
 
@@ -210,7 +225,13 @@ class GimpScriptRunner:
         )
         return self._parse(result)
 
-    def execute_binary(self, string: str, parameters: dict=None, timeout_in_seconds: float=None, error_stream: FileIO = None) -> bytes:
+    def execute_binary(
+            self,
+            string: str,
+            parameters: dict = None,
+            timeout_in_seconds: float = None,
+            error_stream: FileIO = None
+    ) -> bytes:
         """
         Execute a given piece of code within gimp's python interpreter and decode the result to bytes.
 
@@ -241,12 +262,12 @@ class GimpScriptRunner:
         )
 
     def execute(
-        self,
-        string: str,
-        parameters: Dict[str, Union[bool, int, float, str, bytes, list, tuple, dict]]=None,
-        timeout_in_seconds: float=None,
-        output_stream: FileIO = None,
-        error_stream: FileIO = None
+            self,
+            string: str,
+            parameters: Dict[str, Union[bool, int, float, str, bytes, list, tuple, dict]] = None,
+            timeout_in_seconds: float = None,
+            output_stream: FileIO = None,
+            error_stream: FileIO = None
     ) -> Union[str, None]:
         """
         Execute a given piece of code within gimp's python interpreter.
@@ -258,10 +279,14 @@ class GimpScriptRunner:
         'Hello from within gimp\\n'
 
         :param string: The code to be executed as string.
-        :param parameters: Parameter names and values. Supported types will be encoded as string, be passed to the script and be decoded there.
-        :param timeout_in_seconds: How long to wait for completion in seconds until a :py:class:`~pgimp.GimpScriptRunner.GimpScriptExecutionTimeoutException` is thrown.
-        :param output_stream: If absent, the method will return the output, otherwise it will be written diretcly to the stream.
-        :param error_stream: If absent, an exception will be thrown if errors occur. Otherwise errors will be written directly to the stream.
+        :param parameters: Parameter names and values. Supported types will be encoded as string,
+                           be passed to the script and be decoded there.
+        :param timeout_in_seconds: How long to wait for completion in seconds until a
+                                   :py:class:`~pgimp.GimpScriptRunner.GimpScriptExecutionTimeoutException` is thrown.
+        :param output_stream: If absent, the method will return the output, otherwise it will be written
+                              diretcly to the stream.
+        :param error_stream: If absent, an exception will be thrown if errors occur. Otherwise errors will be written
+                             directly to the stream.
         :return: The output produced by the script if no output stream is defined.
         """
         return self._send_to_gimp(
@@ -273,13 +298,13 @@ class GimpScriptRunner:
         )
 
     def _send_to_gimp(
-        self,
-        code: str,
-        timeout_in_seconds: float=None,
-        binary=False,
-        parameters: dict=None,
-        output_stream: FileIO = None,
-        error_stream: FileIO = None
+            self,
+            code: str,
+            timeout_in_seconds: float = None,
+            binary=False,
+            parameters: dict = None,
+            output_stream: FileIO = None,
+            error_stream: FileIO = None
     ) -> Union[str, bytes, None]:
 
         if not is_gimp_present():
@@ -308,9 +333,9 @@ class GimpScriptRunner:
         for parameter, value in parameters.items():
             if isinstance(value, str):
                 parameters_parsed[parameter] = value
-            elif isinstance(value, bool) or isinstance(value, int) or isinstance(value, float) or isinstance(value, bytes):
+            elif isinstance(value, (bool, int, float, bytes)):
                 parameters_parsed[parameter] = repr(value)
-            elif isinstance(value, list) or isinstance(value, tuple) or isinstance(value, dict):
+            elif isinstance(value, (list, tuple, dict)):
                 parameters_parsed[parameter] = json.dumps(value)
             else:
                 raise GimpScriptException('Cannot interpret parameter type {:s}'.format(type(value).__name__))
@@ -398,7 +423,9 @@ class GimpScriptRunner:
             children_list = []
             for child in process_children:
                 try:
-                    children_list.append(child.name().lower() if not child.name().lower().startswith('python') else 'python')
+                    children_list.append(
+                        child.name().lower() if not child.name().lower().startswith('python') else 'python'
+                    )
                 except psutil.NoSuchProcess:
                     pass  # vanishing processes are ok
             children = {*children_list}
@@ -417,5 +444,7 @@ class GimpScriptRunner:
     def _parse(self, input: str) -> JsonType:
         try:
             return json.loads(input)
-        except JSONDecodeError as e:
-            raise GimpScriptException('The following JSON could not be parsed:\n>>>' + input + '<<<\nOriginal decoding error:\n' + str(e))
+        except JSONDecodeError as exc:
+            raise GimpScriptException(
+                'The following JSON could not be parsed:\n>>>' + input + '<<<\nOriginal decoding error:\n' + str(exc)
+            )

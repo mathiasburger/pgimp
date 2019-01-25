@@ -14,11 +14,11 @@ class Output(ABC):
 
     @abstractmethod
     def method(
-        self,
-        method: str,
-        description: str,
-        parameters: Union[MutableMapping[str, Tuple[str, str]], OrderedDict],
-        return_values: Union[MutableMapping[str, Tuple[str, str]], OrderedDict],
+            self,
+            method: str,
+            description: str,
+            parameters: Union[MutableMapping[str, Tuple[str, str]], OrderedDict],
+            return_values: Union[MutableMapping[str, Tuple[str, str]], OrderedDict],
     ):
         pass
 
