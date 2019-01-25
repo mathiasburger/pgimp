@@ -30,15 +30,15 @@ class OutputPythonSkeleton(Output):
         ) + '\n')
 
     def method(
-        self,
-        method: str,
-        description: str,
-        parameters: Union[MutableMapping[str, Tuple[str, str]], OrderedDict],
-        return_values: Union[MutableMapping[str, Tuple[str, str]], OrderedDict],
+            self,
+            method: str,
+            description: str,
+            parameters: Union[MutableMapping[str, Tuple[str, str]], OrderedDict],
+            return_values: Union[MutableMapping[str, Tuple[str, str]], OrderedDict],
     ):
         signature = pythonify_id(method)
         signature += '('
-        if len(parameters) > 0:
+        if parameters:
             last_parameter = next(reversed(parameters))
             for parameter in parameters:
                 signature += pythonify_id(parameter)
@@ -46,7 +46,7 @@ class OutputPythonSkeleton(Output):
                 if parameter != last_parameter:
                     signature += ', '
         signature += ')'
-        if len(return_values) > 0:
+        if return_values:
             signature += ' -> '
             last_return_value = next(reversed(return_values))
             if len(return_values) == 1:
@@ -62,12 +62,12 @@ class OutputPythonSkeleton(Output):
         documentation = '"""\n'
         if description:
             documentation += description + '\n'
-        if description and len(parameters) > 0:
+        if description and parameters:
             documentation += '\n'
-        if len(parameters) > 0:
+        if parameters:
             for parameter in parameters:
                 documentation += ':param ' + pythonify_id(parameter) + ': ' + parameters[parameter][1] + '\n'
-        if len(return_values) > 0:
+        if return_values:
             documentation += ':return: ' + ', '.join(list(map(pythonify_id, return_values.keys()))) + '\n'
         documentation += '"""'
 

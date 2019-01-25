@@ -86,11 +86,11 @@ def test_ordering():
     collection = GimpFileCollection.create_from_pathname(file.relative_to(__file__, 'test-resources/files/**'))
     collection = collection.replace_prefix(prefix)
     assert [
-               'first.xcf',
-               'second.xcf',
-               'a/third.xcf',
-               'a/b/fourth.xcf',
-           ] == collection.get_files()
+        'first.xcf',
+        'second.xcf',
+        'a/third.xcf',
+        'a/b/fourth.xcf',
+    ] == collection.get_files()
 
 
 def test_replace_path_components():
@@ -101,11 +101,11 @@ def test_replace_path_components():
     collection = collection.replace_path_components(prefix, '#', suffix, '%')
 
     assert [
-               '#first%.xcf',
-               '#second%.xcf',
-               '#a/third%.xcf',
-               '#a/b/fourth%.xcf',
-           ] == collection.get_files()
+        '#first%.xcf',
+        '#second%.xcf',
+        '#a/third%.xcf',
+        '#a/b/fourth%.xcf',
+    ] == collection.get_files()
 
 
 def test_replace_path_components_with_non_existing_component():
@@ -275,9 +275,9 @@ def test_execute_script_and_return_json_with_script_that_takes_single_file():
 
         files = collection.execute_script_and_return_json(script.format(escape_single_quotes('White')), timeout_in_seconds=3)
         assert {
-                    with_white: True,
-                    without_white: False,
-               } == files
+            with_white: True,
+            without_white: False,
+        } == files
 
 
 def test_execute_script_and_return_json_with_script_that_takes_multiple_files_using_open():

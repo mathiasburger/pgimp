@@ -428,7 +428,7 @@ class GimpFile:
             from pgimp.gimp.layer import add_layer_from_numpy
 
             with XcfFile('{2:s}', save=True) as image:
-                add_layer_from_numpy(image, '{5:s}', '{4:s}', {0:d}, {1:d}, {3:d}, {8:d}, float({7:s}), 
+                add_layer_from_numpy(image, '{5:s}', '{4:s}', {0:d}, {1:d}, {3:d}, {8:d}, float({7:s}),
                                      gimpenums.NORMAL_MODE, {6:s})
             """
         ).format(
@@ -516,7 +516,7 @@ class GimpFile:
             """
             from pgimp.gimp.file import XcfFile
             from pgimp.gimp.layer import copy_layer
-            
+
             with XcfFile('{1:s}') as image_src, XcfFile('{0:s}', save=True) as image_dst:
                 copy_layer(image_src, '{3:s}', image_dst, '{2:s}', 5)
             """
@@ -583,9 +583,9 @@ class GimpFile:
             """
             from pgimp.gimp.file import open_xcf
             from pgimp.gimp.parameter import return_json
-            
+
             image = open_xcf('{0:s}')
-            
+
             result = []
             for layer in image.layers:
                 properties = dict()
@@ -593,7 +593,7 @@ class GimpFile:
                 properties['visible'] = layer.visible
                 properties['opacity'] = layer.opacity
                 result.append(properties)
-            
+
             return_json(result)
             """.format(escape_single_quotes(self._file))
         )
@@ -678,7 +678,7 @@ class GimpFile:
             """
             from pgimp.gimp.file import open_xcf
             from pgimp.gimp.parameter import return_json
-            
+
             image = open_xcf('{0:s}')
             return_json([image.width, image.height])
             """
