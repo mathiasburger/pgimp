@@ -44,6 +44,13 @@ Classes and methods that make up the public API need to be documented. The sphin
 under `doc/`. Docstrings in python are used for documenting entities in the code. Each public method of the API 
 should also have a minimum working example.
 
+## Quality checks
+
+Execute the following to run quality checks (needs pylint which can be installed with e.g. `pip3 install pylint`:
+```
+./quality.sh
+```
+
 ## Publishing
 
 Is done by the maintainer using the following guidelines:
