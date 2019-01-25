@@ -11,12 +11,12 @@ from pgimp.util import file
 
 def test_generate_python_skeletons():
     generate_python_skeleton = GimpDocumentationGenerator(OutputPythonSkeleton(
-        file.relative_to(__file__, '../../gimp'))
-    )
+        file.relative_to(__file__, '../../gimp')
+    ))
     generate_python_skeleton()
 
-    def assert_file_exists(f: str):
-        assert os.path.exists(os.path.join(file.relative_to(__file__, '../../'), f))
+    def assert_file_exists(file: str):
+        assert os.path.exists(os.path.join(file.relative_to(__file__, '../../'), file))
 
     assert_file_exists('gimp/__init__.py')
     assert_file_exists('gimp/pdb.py')

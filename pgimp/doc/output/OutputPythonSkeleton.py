@@ -7,7 +7,7 @@ import textwrap
 from collections import OrderedDict
 from typing import Tuple, MutableMapping, Union, List, Any
 
-from pgimp.doc.GimpDocumentationGenerator import gimpTypeMapping, KNOWN_GIMP_CLASSES, UNKNOWN_GIMP_CLASSES
+from pgimp.doc.GimpDocumentationGenerator import GIMP_TYPE_MAPPING, KNOWN_GIMP_CLASSES, UNKNOWN_GIMP_CLASSES
 from pgimp.doc.output.Output import Output
 from pgimp.util import file
 
@@ -26,7 +26,7 @@ class OutputPythonSkeleton(Output):
         self._add_file(name)
         self._append('from typing import List, Tuple\n')
         self._append('from gimp import ' + ', '.join(
-            [gimpTypeMapping[i] for i in KNOWN_GIMP_CLASSES + UNKNOWN_GIMP_CLASSES]
+            [GIMP_TYPE_MAPPING[i] for i in KNOWN_GIMP_CLASSES + UNKNOWN_GIMP_CLASSES]
         ) + '\n')
 
     def method(

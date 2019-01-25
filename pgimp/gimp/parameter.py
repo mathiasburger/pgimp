@@ -29,7 +29,7 @@ def get_bool(name, default=None):
         return value
     if value == "True":
         return True
-    elif value == "False":
+    if value == "False":
         return False
     raise ValueError("Could not decode '" + str(value) + "' to boolean")
 

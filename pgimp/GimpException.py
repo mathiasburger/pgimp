@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+
 class GimpException(Exception):
     """
     When pgimp encounters a gimp related exception, it will automatically map it onto
@@ -16,4 +17,3 @@ class GimpException(Exception):
     ...     str(e).split('\\n')[-2]
     'ZeroDivisionError: integer division or modulo by zero'
     """
-    pass

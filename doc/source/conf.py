@@ -19,9 +19,9 @@ import pgimp
 
 # -- Project information -----------------------------------------------------
 
-project = pgimp.project
-copyright = '2018, ' + pgimp.author
-author = pgimp.author
+project = pgimp.PROJECT
+copyright = '2018, ' + pgimp.AUTHOR
+author = pgimp.AUTHOR
 
 # The short X.Y version
 version = pgimp.__version__
@@ -109,7 +109,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = pgimp.project + 'doc'
+htmlhelp_basename = pgimp.PROJECT + 'doc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
