@@ -44,6 +44,9 @@ class XcfFile:
         self._image = None
 
     def __enter__(self):
+        """
+        :rtype: gimp.Image
+        """
         self._image = open_xcf(self._file)
         return self._image
 

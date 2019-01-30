@@ -7,7 +7,7 @@ import os
 import tempfile
 import textwrap
 from enum import Enum
-from typing import List, Union, Tuple
+from typing import List, Union, Tuple, Optional
 
 import numpy as np
 
@@ -477,7 +477,9 @@ class GimpFile:
             name: str,
             new_name: str = None,
             new_type: GimpFileType = GimpFileType.RGB,
-            new_position: int = 0
+            new_position: int = 0,
+            new_visibility: Optional[bool] = None,
+            new_opacity: Optional[float] = None,
     ) -> 'GimpFile':
         """
         Adds a new layer to the gimp file from another gimp file.
@@ -510,15 +512,27 @@ class GimpFile:
         :param new_name: The new layer name in the current image. Same as the layer name in the other file if not set.
         :param new_type: The layer type to create in the current image. E.g. rgb or grayscale.
         :param new_position: Position in the stack of layers. On top = 0, bottom = number of layers.
+        :param new_visibility: Visibility of the layer if it should be changed.
+        :param new_opacity: Opacity for the layer if it should be changed.
         :return: :py:class:`~pgimp.GimpFile.GimpFile`
         """
         code = textwrap.dedent(
             """
+            from pgimp.gimp.parameter import get_json
             from pgimp.gimp.file import XcfFile
             from pgimp.gimp.layer import copy_layer
+            
+            params = get_json('params')
+            new_position = params['new_position']
+            new_visibility = params['new_visibility']
+            new_opacity = params['new_opacity']
 
             with XcfFile('{1:s}') as image_src, XcfFile('{0:s}', save=True) as image_dst:
-                copy_layer(image_src, '{3:s}', image_dst, '{2:s}', 5)
+                copy_layer(image_src, '{3:s}', image_dst, '{2:s}', new_position)
+                if new_visibility is not None:
+                    image_dst.layers[new_position].visible = new_visibility
+                if new_opacity is not None:
+                    image_dst.layers[new_position].opacity = float(new_opacity)
             """
         ).format(
             escape_single_quotes(self._file),
@@ -526,10 +540,15 @@ class GimpFile:
             escape_single_quotes(new_name or name),
             escape_single_quotes(name),
             new_type.value,
-            new_position
         )
 
-        self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
+        self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds, parameters={
+            'params': {
+                'new_visibility': new_visibility,
+                'new_position': new_position,
+                'new_opacity': new_opacity,
+            }
+        })
         return self
 
     def merge_layer_from_file(self, other_file: 'GimpFile', name: str) -> 'GimpFile':
