@@ -22,7 +22,7 @@ def touch(file: str):
 
 
 def append(file: str, content: str):
-    with open(file, 'a') as file_handle:
+    with open(file, 'a', encoding='utf8') as file_handle:
         file_handle.write(content)
 
 
