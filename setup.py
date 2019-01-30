@@ -4,8 +4,11 @@ import shutil
 from setuptools import setup, find_packages
 from setuptools.command.build_py import build_py
 
+import pgimp
 from pgimp import __version__, PROJECT, AUTHOR
 from pgimp.util import file
+
+pgimp.execute_scripts_with_process_check = True  # because psutil might not yet be installed
 
 
 class GimpDocumentationGeneratorCommand(build_py):

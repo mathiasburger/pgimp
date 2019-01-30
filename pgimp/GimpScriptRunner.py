@@ -13,10 +13,12 @@ from io import FileIO
 from json import JSONDecodeError
 from typing import Dict, Union, List
 
-import psutil
-
+import pgimp
 from pgimp.GimpException import GimpException
 from pgimp.util import file
+
+if pgimp.execute_scripts_with_process_check:
+    import psutil
 
 EXECUTABLE_XVFB = 'xvfb-run'
 FLAG_AUTO_SERVERNUM = '--auto-servernum'
@@ -356,13 +358,16 @@ class GimpScriptRunner:
 
         code = initializer + extend_path + code + quit_gimp
 
-        if is_xvfb_present():
-            expected_processes = {'xvfb', 'gimp', 'script-fu', 'python'}
-        else:
-            expected_processes = {'script-fu', 'python'}
+        if pgimp.execute_scripts_with_process_check:
+            import psutil
 
-        process = psutil.Process(self._gimp_process.pid)
-        process_children = self._wait_for_child_processes_to_start(process, expected_processes)
+            if is_xvfb_present():
+                expected_processes = {'xvfb', 'gimp', 'script-fu', 'python'}
+            else:
+                expected_processes = {'script-fu', 'python'}
+
+            process = psutil.Process(self._gimp_process.pid)
+            process_children = self._wait_for_child_processes_to_start(process, expected_processes)
 
         try:
             stdout, stderr = self._gimp_process.communicate(code.encode(), timeout=timeout_in_seconds)
@@ -370,7 +375,8 @@ class GimpScriptRunner:
             self._gimp_process.kill()
             raise GimpScriptExecutionTimeoutException(str(exception) + '\nCode that was executed:\n' + code)
         finally:
-            self._kill_non_terminated_processes(process_children)
+            if pgimp.execute_scripts_with_process_check:
+                self._kill_non_terminated_processes(process_children)
 
         if binary:
             stdout_content = stdout
