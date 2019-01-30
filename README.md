@@ -31,7 +31,8 @@ See `pgimp.GimpScriptRunnerTest.test_import_from_pgimp_library`.
 
 # Installation
 
-The package manager `pip` and the python `setuptools` are required. As gimp uses a python2 interpreter, 
+The package manager `pip` and the python packages `setuptools` and `psutil` are required in order 
+to install the package. As gimp uses a python2 interpreter, 
 the pip packages `numpy` and `typing` for python2 need to be installed.
 
 ## Operating system dependent infos
