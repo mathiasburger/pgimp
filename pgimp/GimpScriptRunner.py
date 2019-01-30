@@ -11,7 +11,7 @@ import time
 from glob import glob
 from io import FileIO
 from json import JSONDecodeError
-from typing import Dict, Union, List
+from typing import Dict, Union
 
 import pgimp
 from pgimp.GimpException import GimpException
@@ -442,7 +442,7 @@ class GimpScriptRunner:
                     'Child processes ' + ', '.join(expected_processes) + ' were not spawned in time.')
         return process_children
 
-    def _kill_non_terminated_processes(self, processes: List[psutil.Process]):
+    def _kill_non_terminated_processes(self, processes):
         for process in processes:
             if process.is_running():
                 process.kill()
