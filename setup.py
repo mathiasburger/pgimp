@@ -5,14 +5,15 @@ from setuptools import setup, find_packages
 from setuptools.command.build_py import build_py
 
 from pgimp import __version__, PROJECT, AUTHOR
-from pgimp.doc.GimpDocumentationGenerator import GimpDocumentationGenerator
-from pgimp.doc.output.OutputPythonSkeleton import OutputPythonSkeleton
 from pgimp.util import file
 
 
 class GimpDocumentationGeneratorCommand(build_py):
     def run(self):
         if not self._dry_run:
+            from pgimp.doc.GimpDocumentationGenerator import GimpDocumentationGenerator
+            from pgimp.doc.output.OutputPythonSkeleton import OutputPythonSkeleton
+
             generate_python_skeleton = GimpDocumentationGenerator(OutputPythonSkeleton(
                 file.relative_to(__file__, 'gimp')
             ))
