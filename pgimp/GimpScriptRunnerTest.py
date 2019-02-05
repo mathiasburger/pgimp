@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 
 from pgimp.GimpScriptRunner import GimpScriptRunner, GimpScriptException, GimpScriptExecutionTimeoutException, \
-    strip_gimp_warnings, strip_babl_fastpath_error
+    strip_gimp_warnings, strip_initialization_warnings
 from pgimp.util import file
 from pgimp.util.TempFile import TempFile
 
@@ -200,7 +200,7 @@ def test_no_dangling_processes():
     assert len(hanging_processes) == 0
 
 
-def test_ignore_babl_fastpath_error():
+def test_strip_initialization_warnings():
     error = ('Missing fast-path babl conversion detected, Implementing missing babl fast paths\n'
              'accelerates GEGL, GIMP and other software using babl, warnings are printed on\n'
              'first occurance of formats used where a conversion has to be synthesized\n'
@@ -208,12 +208,12 @@ def test_ignore_babl_fastpath_error():
              '\n'
              '*WARNING* missing babl fast path(s): "R\'G\'B\' double" to "CIE Lab double"\n')
     error_lines = error.split('\n')
-    error_lines = strip_babl_fastpath_error(error_lines)
+    error_lines = strip_initialization_warnings(error_lines)
 
     assert not error_lines
 
     error += 'abc'
     error_lines = error.split('\n')
-    error_lines = strip_babl_fastpath_error(error_lines)
+    error_lines = strip_initialization_warnings(error_lines)
 
     assert ['abc'] == error_lines

@@ -116,11 +116,15 @@ def strip_gimp_warnings(input):
     return input
 
 
-def strip_babl_fastpath_error(error_lines):
-    if error_lines[0].startswith('Missing fast-path babl'):
-        error_lines = error_lines[6:]
+def strip_initialization_warnings(error_lines):
+    strip_idx = 0
+    for i in range(len(error_lines)-1, 0-1, -1):
+        if error_lines[i].startswith('*WARNING*'):
+            strip_idx = i+1
+            break
+    error_lines = error_lines[strip_idx:]
     if error_lines == ['']:
-        error_lines = error_lines[1:]
+        return []
     return error_lines
 
 
@@ -421,7 +425,7 @@ class GimpScriptRunner:
                 if self._file_to_execute:
                     error_string = error_string.replace('File "<string>"', 'File "{:s}"'.format(self._file_to_execute), 1)
                 raise GimpScriptException(error_string)
-            error_lines = strip_babl_fastpath_error(error_lines)
+            error_lines = strip_initialization_warnings(error_lines)
             if error_lines:
                 raise GimpScriptException('\n'.join(error_lines))
 
