@@ -67,19 +67,22 @@ def path_to_gimp_executable():
     if EXECUTABLE_GIMP_PATH is not None:
         return EXECUTABLE_GIMP_PATH
 
+    if sys.platform in ['linux', 'linux2', 'darwin']:
+        EXECUTABLE_GIMP_PATH = shutil.which(EXECUTABLE_GIMP)
+    else:
+        raise GimpUnsupportedOSException('Your operating system "{:s}" is not supported.'.format(sys.platform))
+
     if sys.platform == 'darwin':
         locations = [
             '/Applications/GIMP*.app/Contents/MacOS/gimp',
+            '/Applications/Gimp*.app/Contents/MacOS/gimp',
             '~/Applications/GIMP*.app/Contents/MacOS/gimp',
+            '~/Applications/Gimp*.app/Contents/MacOS/gimp',
         ]
         for location in locations:
             location = glob(location)
             if location:
                 EXECUTABLE_GIMP_PATH = location[0]
-    elif sys.platform in ['linux', 'linux2']:
-        EXECUTABLE_GIMP_PATH = shutil.which(EXECUTABLE_GIMP)
-    else:
-        raise GimpUnsupportedOSException('Your operating system "{:s}" is not supported.'.format(sys.platform))
 
     return EXECUTABLE_GIMP_PATH
 
