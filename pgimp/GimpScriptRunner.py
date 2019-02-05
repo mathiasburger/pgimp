@@ -116,6 +116,14 @@ def strip_gimp_warnings(input):
     return input
 
 
+def strip_babl_fastpath_error(error_lines):
+    if error_lines[0].startswith('Missing fast-path babl'):
+        error_lines = error_lines[6:]
+    if error_lines == ['']:
+        error_lines = error_lines[1:]
+    return error_lines
+
+
 class GimpScriptRunner:
     """
     Executes python2 scripts within gimp's python interpreter and is used to create
@@ -413,7 +421,9 @@ class GimpScriptRunner:
                 if self._file_to_execute:
                     error_string = error_string.replace('File "<string>"', 'File "{:s}"'.format(self._file_to_execute), 1)
                 raise GimpScriptException(error_string)
-            raise GimpScriptException('\n'.join(error_lines))
+            error_lines = strip_babl_fastpath_error(error_lines)
+            if error_lines:
+                raise GimpScriptException('\n'.join(error_lines))
 
         if binary:
             # gimp warnings can be mixed with byte content, use latin1 because it is a bytewise encoding
