@@ -627,7 +627,8 @@ class GimpFile:
 
     def layer_names(self) -> List[str]:
         """
-        Returns the names of the layers in the gimp file.
+        Returns the names of the layers in the gimp file. The topmost layer is the first element,
+        the bottommost the last element.
 
         Example:
 
