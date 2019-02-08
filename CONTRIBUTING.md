@@ -38,6 +38,27 @@ There must not be any todos in the code. Please open an issue or write an entry 
 New functionality needs to be tested. The project is using pytest. Test environment configurations can be found 
 in `docker-compose.yml`. You may configure your IDE to use specific docker-compose services to run the tests.
 
+### Build a specific container
+
+```
+docker-compose build <SERVICE_NAME>
+```
+
+### Troubleshooting a failed container build
+
+Note the id of the last successful image that was build and start it with a shell to inspect the current state:
+
+```
+docker run --rm -it <CONTAINER_ID> /bin/bash
+```
+
+### Run tests in a specific container
+
+CentOS
+```
+docker-compose run --rm pgimp-centos-7.4 scl enable rh-python36 'python3 -m pytest -c pytest.ini --maxfail=2 pgimp'
+```
+
 ## Documentation
 
 Classes and methods that make up the public API need to be documented. The sphinx documentation root is located 
