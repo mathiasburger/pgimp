@@ -22,3 +22,10 @@ services:
     image: mabu/pgimp-centos-7.4:latest
     volumes:
       - ./:/src
+  pgimp-centos-7.6:
+    build:
+      context: .
+      dockerfile: test/envs/linux/centos/7.6/Dockerfile
+    image: mabu/pgimp-centos-7.6:latest
+    volumes:
+      - ./:/src
