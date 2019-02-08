@@ -34,6 +34,8 @@ FLAG_FROM_STDIN = '-'
 
 CHILD_PROCESS_START_TIMEOUT = 10
 
+PYTHON2_PYTHONPATH = None
+
 JsonType = Union[None, bool, int, float, str, list, dict]
 
 
@@ -61,18 +63,26 @@ class GimpUnsupportedOSException(GimpException):
     """
 
 
+def is_linux():
+    return sys.platform in ['linux', 'linux2']
+
+
+def is_mac_os():
+    return sys.platform == 'darwin'
+
+
 def path_to_gimp_executable():
     global EXECUTABLE_GIMP_PATH
 
     if EXECUTABLE_GIMP_PATH is not None:
         return EXECUTABLE_GIMP_PATH
 
-    if sys.platform in ['linux', 'linux2', 'darwin']:
+    if is_linux() or is_mac_os():
         EXECUTABLE_GIMP_PATH = shutil.which(EXECUTABLE_GIMP)
     else:
         raise GimpUnsupportedOSException('Your operating system "{:s}" is not supported.'.format(sys.platform))
 
-    if sys.platform == 'darwin':
+    if is_mac_os():
         locations = [
             '/Applications/GIMP*.app/Contents/MacOS/gimp',
             '/Applications/Gimp*.app/Contents/MacOS/gimp',
@@ -96,7 +106,7 @@ def path_to_xvfb_run():
 
 
 def is_xvfb_present():
-    return  path_to_xvfb_run() is not None
+    return path_to_xvfb_run() is not None
 
 
 def strip_gimp_warnings(input):
@@ -126,6 +136,28 @@ def strip_initialization_warnings(error_lines):
     if error_lines == ['']:
         return []
     return error_lines
+
+
+def python2_pythonpath():
+    global PYTHON2_PYTHONPATH
+    if PYTHON2_PYTHONPATH is None:
+        python = shutil.which('python2')
+        if python is None:
+            raise GimpScriptException('Could not find a python2 installation.')
+        proc = subprocess.Popen(
+            [python],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        stdout, stderr = proc.communicate(
+            'import sys; print(":".join(set([p for p in sys.path if "site-packages" in p])));'.encode(),
+            timeout=5
+        )
+        if stderr.decode() != '':
+            raise GimpScriptException('Could not determine python2 site-packages location.')
+        PYTHON2_PYTHONPATH = stdout.decode().rstrip('\n')
+    return PYTHON2_PYTHONPATH
 
 
 class GimpScriptRunner:
@@ -343,6 +375,10 @@ class GimpScriptRunner:
 
         gimp_environment = {'__working_directory__': self._working_directory}
         gimp_environment.update(os.environ.copy())
+        if 'PYTHONPATH' not in gimp_environment:
+            gimp_environment['PYTHONPATH'] = python2_pythonpath()
+        else:
+            gimp_environment['PYTHONPATH'] = python2_pythonpath() + ':' + gimp_environment['PYTHONPATH']
         gimp_environment.update({k: v for k, v in self._environment.items() if self._environment[k] is not None})
 
         parameters = parameters or {}

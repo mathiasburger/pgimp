@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 
 from pgimp.GimpScriptRunner import GimpScriptRunner, GimpScriptException, GimpScriptExecutionTimeoutException, \
-    strip_gimp_warnings, strip_initialization_warnings
+    strip_gimp_warnings, strip_initialization_warnings, python2_pythonpath
 from pgimp.util import file
 from pgimp.util.TempFile import TempFile
 
@@ -217,3 +217,7 @@ def test_strip_initialization_warnings():
     error_lines = strip_initialization_warnings(error_lines)
 
     assert ['abc'] == error_lines
+
+
+def test_python2_pythonpath():
+    assert 'site-packages' in python2_pythonpath()
