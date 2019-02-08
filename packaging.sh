@@ -3,11 +3,11 @@
 cd $(dirname $(readlink -f $0))
 
 echo ">>> cleaning up <<<"
-rm -r pgimp.egg-info/
-rm -r dist/
-rm -r gimp/
-rm -r gimpenums/
-rm -r gimpfu/
+rm -rf pgimp.egg-info/
+rm -rf dist/
+rm -rf gimp/
+rm -rf gimpenums/
+rm -rf gimpfu/
 
 echo ">>> creating distribution files <<<"
 # do not create bdist_wheel because of content that needs to be generated on the target system
