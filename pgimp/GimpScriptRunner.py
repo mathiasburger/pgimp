@@ -151,7 +151,7 @@ def python2_pythonpath():
             stderr=subprocess.PIPE,
         )
         stdout, stderr = proc.communicate(
-            'import sys; print(":".join(set([p for p in sys.path if "site-packages" in p])));'.encode(),
+            'import sys; print(":".join(set([p for p in sys.path if "site-packages" in p or "dist-packages" in p])));'.encode(),
             timeout=5
         )
         if stderr.decode() != '':

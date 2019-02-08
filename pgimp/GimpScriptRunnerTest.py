@@ -220,4 +220,4 @@ def test_strip_initialization_warnings():
 
 
 def test_python2_pythonpath():
-    assert 'site-packages' in python2_pythonpath()
+    assert 'site-packages' in python2_pythonpath() or 'dist-packages' in python2_pythonpath()
