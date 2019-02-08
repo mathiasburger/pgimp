@@ -1,5 +1,4 @@
 import os
-import re
 import shutil
 import subprocess
 
@@ -9,6 +8,8 @@ from setuptools.command.build_py import build_py
 import pgimp
 from pgimp import __version__, PROJECT, AUTHOR
 from pgimp.util import file
+
+PYTHON2_REQUIREMENTS = ['numpy', 'typing']
 
 
 class GimpInstallationException(Exception):
@@ -26,16 +27,15 @@ def check_python2_installation():
         stderr=subprocess.PIPE,
     )
 
-    requirements = open(os.path.join(os.path.dirname(__file__), 'requirements-python2.txt'), 'r').readlines()
-    imports = list(map(lambda r: re.split('[<=>\\s]', r)[0], filter(lambda x: x != '\n', requirements)))
-    import_statements = list(map(lambda r: 'import ' + r, imports))
+    requirements = PYTHON2_REQUIREMENTS
+    import_statements = list(map(lambda r: 'import ' + r, requirements))
     stdout, stderr = proc.communicate(
         '\n'.join(import_statements).encode(),
         timeout=5
     )
     if stderr.decode() != '':
         raise GimpInstallationException(
-            'At least one of the following packages is missing in the python2 installation: ' + ', '.join(imports)
+            'At least one of the following packages is missing in the python2 installation: ' + ', '.join(requirements)
         )
 
 
