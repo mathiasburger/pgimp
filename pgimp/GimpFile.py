@@ -64,12 +64,17 @@ class GimpFile:
     ['Background']
     """
 
-    def __init__(self, file: str) -> None:
+    def __init__(
+        self,
+        file: str,
+        short_running_timeout_in_seconds: int = 10,
+        long_running_timeout_in_seconds: int = 20,
+    ) -> None:
         super().__init__()
         self._file = file
         self._gsr = GimpScriptRunner()
-        self._layer_conversion_timeout_in_seconds = 20
-        self._short_running_timeout_in_seconds = 10
+        self._long_running_timeout_in_seconds = long_running_timeout_in_seconds
+        self._short_running_timeout_in_seconds = short_running_timeout_in_seconds
 
     def get_file(self):
         """
@@ -79,7 +84,12 @@ class GimpFile:
         """
         return self._file
 
-    def create(self, layer_name: str, layer_content: np.ndarray) -> 'GimpFile':
+    def create(
+        self,
+        layer_name: str,
+        layer_content: np.ndarray,
+        timeout: Optional[int] = None,
+    ) -> 'GimpFile':
         """
         Create a new gimp image with one layer from a numpy array.
 
@@ -95,6 +105,7 @@ class GimpFile:
 
         :param layer_name: Name of the layer to create.
         :param layer_content: Layer content, usually in the format of unsigned 8 bit integers.
+        :param timeout: Execution timeout in seconds.
         :return: The newly created :py:class:`~pgimp.GimpFile.GimpFile`.
         """
         height, width, depth, image_type, layer_type = self._numpy_array_info(layer_content)
@@ -122,12 +133,21 @@ class GimpFile:
             escape_single_quotes(tmpfile)
         )
 
-        self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
+        self._gsr.execute(
+            code,
+            timeout_in_seconds=self._long_running_timeout_in_seconds if timeout is None else timeout
+        )
 
         os.remove(tmpfile)
         return self
 
-    def create_empty(self, width: int, height: int, type: GimpFileType) -> 'GimpFile':
+    def create_empty(
+        self,
+        width: int,
+        height: int,
+        type: GimpFileType,
+        timeout: Optional[int] = None,
+    ) -> 'GimpFile':
         """
         Creates an empty image without any layers.
 
@@ -143,6 +163,7 @@ class GimpFile:
         :param width: Image width.
         :param height: Image height.
         :param type: Image type, e.g. rgb or gray.
+        :param timeout: Execution timeout in seconds.
         :return: The newly created :py:class:`~pgimp.GimpFile.GimpFile`.
         """
         code = textwrap.dedent(
@@ -154,10 +175,19 @@ class GimpFile:
             """
         ).format(width, height, type.value, escape_single_quotes(self._file))
 
-        self._gsr.execute(code, timeout_in_seconds=self._short_running_timeout_in_seconds)
+        self._gsr.execute(
+            code,
+            timeout_in_seconds=self._short_running_timeout_in_seconds if timeout is None else timeout
+        )
         return self
 
-    def create_indexed(self, layer_name: str, layer_content: np.ndarray, colormap: Union[np.ndarray, ColorMap]) -> 'GimpFile':
+    def create_indexed(
+        self,
+        layer_name: str,
+        layer_content: np.ndarray,
+        colormap: Union[np.ndarray, ColorMap],
+        timeout: Optional[int] = None,
+    ) -> 'GimpFile':
         """
         Create a new indexed gimp image with one layer from a numpy array. An indexed image has a single channel
         and displays the values using a colormap.
@@ -193,6 +223,7 @@ class GimpFile:
 
         :param layer_name: Name of the layer to create.
         :param layer_content: Layer content, usually in the format of unsigned 8 bit integers.
+        :param timeout: Execution timeout in seconds.
         :return: The newly created :py:class:`~pgimp.GimpFile.GimpFile`.
         """
         if isinstance(colormap, np.ndarray):
@@ -232,12 +263,19 @@ class GimpFile:
             escape_single_quotes(tmpfile)
         )
 
-        self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
+        self._gsr.execute(
+            code,
+            timeout_in_seconds=self._long_running_timeout_in_seconds if timeout is None else timeout
+        )
 
         os.remove(tmpfile)
         return self
 
-    def create_from_template(self, other_file: 'GimpFile') -> 'GimpFile':
+    def create_from_template(
+        self,
+        other_file: 'GimpFile',
+        timeout: Optional[int] = None,
+    ) -> 'GimpFile':
         """
         Create a new gimp file without any layers from a template containing the dimensions (width, height)
         and the image type.
@@ -253,6 +291,7 @@ class GimpFile:
         []
 
         :param other_file: The template file.
+        :param timeout: Execution timeout in seconds.
         :return: The newly created :py:class:`~pgimp.GimpFile.GimpFile`.
         """
         code = textwrap.dedent(
@@ -264,10 +303,18 @@ class GimpFile:
             """
         ).format(escape_single_quotes(other_file._file), escape_single_quotes(self._file))
 
-        self._gsr.execute(code, timeout_in_seconds=self._short_running_timeout_in_seconds)
+        self._gsr.execute(
+            code,
+            timeout_in_seconds=self._short_running_timeout_in_seconds if timeout is None else timeout
+        )
         return self
 
-    def create_from_file(self, file: str, layer_name: str = 'Background') -> 'GimpFile':
+    def create_from_file(
+        self,
+        file: str,
+        layer_name: str = 'Background',
+        timeout: Optional[int] = None,
+    ) -> 'GimpFile':
         """
         Create a new gimp file by importing an image from another format.
 
@@ -286,6 +333,7 @@ class GimpFile:
 
         :param file: File to import into gimp.
         :param layer_name: The layer name for the data to be imported.
+        :param timeout: Execution timeout in seconds.
         :return:
         """
         code = textwrap.dedent(
@@ -302,10 +350,16 @@ class GimpFile:
             escape_single_quotes(layer_name)
         )
 
-        self._gsr.execute(code, timeout_in_seconds=self._short_running_timeout_in_seconds)
+        self._gsr.execute(
+            code,
+            timeout_in_seconds=self._short_running_timeout_in_seconds if timeout is None else timeout
+        )
         return self
 
-    def copy(self, filename: str) -> 'GimpFile':
+    def copy(
+        self,
+        filename: str,
+    ) -> 'GimpFile':
         """
         Copies a gimp file.
 
@@ -325,7 +379,11 @@ class GimpFile:
         dst = file.copy_relative(self._file, filename)
         return GimpFile(dst)
 
-    def layer_to_numpy(self, layer_name: str) -> np.ndarray:
+    def layer_to_numpy(
+        self,
+        layer_name: str,
+        timeout: Optional[int] = None,
+    ) -> np.ndarray:
         """
         Convert a gimp layer to a numpy array of unsigned 8 bit integers.
 
@@ -340,11 +398,19 @@ class GimpFile:
         (1, 2, 1)
 
         :param layer_name: Name of the layer to convert.
+        :param timeout: Execution timeout in seconds.
         :return: Numpy array of unsigned 8 bit integers.
         """
-        return self.layers_to_numpy([layer_name])
+        return self.layers_to_numpy(
+            [layer_name],
+            timeout_in_seconds=self._long_running_timeout_in_seconds if timeout is None else timeout
+        )
 
-    def layers_to_numpy(self, layer_names: List[str]) -> np.ndarray:
+    def layers_to_numpy(
+        self,
+        layer_names: List[str],
+        timeout: Optional[int] = None,
+    ) -> np.ndarray:
         """
         Convert gimp layers to a numpy array of unsigned 8 bit integers.
 
@@ -362,6 +428,7 @@ class GimpFile:
         (1, 2, 3)
 
         :param layer_names: Names of the layers to convert.
+        :param timeout: Execution timeout in seconds.
         :return: Numpy array of unsigned 8 bit integers.
         """
         bytes = self._gsr.execute_binary(
@@ -378,18 +445,19 @@ class GimpFile:
                 """,
             ).format(escape_single_quotes(self._file)),
             parameters={'layer_names': layer_names},
-            timeout_in_seconds=self._layer_conversion_timeout_in_seconds,
+            timeout_in_seconds=self._long_running_timeout_in_seconds if timeout is None else timeout
         )
 
         return np.load(io.BytesIO(bytes))
 
     def add_layer_from_numpy(
-            self,
-            layer_name: str,
-            layer_content: np.ndarray,
-            opacity: float = 100.0,
-            visible: bool = True, position: int = 0,
-            type: LayerType = None
+        self,
+        layer_name: str,
+        layer_content: np.ndarray,
+        opacity: float = 100.0,
+        visible: bool = True, position: int = 0,
+        type: LayerType = None,
+        timeout: Optional[int] = None,
     ) -> 'GimpFile':
         """
         Adds a new layer to the gimp file from numpy data, usually as unsigned 8 bit integers.
@@ -412,6 +480,7 @@ class GimpFile:
         :param visible: Whether the layer should be visible.
         :param position: Position in the stack of layers. On top = 0, bottom = number of layers.
         :param type: Layer type. Indexed images should use indexed layers.
+        :param timeout: Execution timeout in seconds.
         :return: :py:class:`~pgimp.GimpFile.GimpFile`
         """
         height, width, depth, image_type, layer_type = self._numpy_array_info(layer_content)
@@ -443,7 +512,10 @@ class GimpFile:
             position
         )
 
-        self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
+        self._gsr.execute(
+            code, 
+            timeout_in_seconds=self._long_running_timeout_in_seconds if timeout is None else timeout
+        )
 
         os.remove(tmpfile)
         return self
@@ -472,14 +544,15 @@ class GimpFile:
         return height, width, depth, image_type, layer_type
 
     def add_layer_from_file(
-            self,
-            other_file: 'GimpFile',
-            name: str,
-            new_name: str = None,
-            new_type: GimpFileType = GimpFileType.RGB,
-            new_position: int = 0,
-            new_visibility: Optional[bool] = None,
-            new_opacity: Optional[float] = None,
+        self,
+        other_file: 'GimpFile',
+        name: str,
+        new_name: str = None,
+        new_type: GimpFileType = GimpFileType.RGB,
+        new_position: int = 0,
+        new_visibility: Optional[bool] = None,
+        new_opacity: Optional[float] = None,
+        timeout: Optional[int] = None,
     ) -> 'GimpFile':
         """
         Adds a new layer to the gimp file from another gimp file.
@@ -514,6 +587,7 @@ class GimpFile:
         :param new_position: Position in the stack of layers. On top = 0, bottom = number of layers.
         :param new_visibility: Visibility of the layer if it should be changed.
         :param new_opacity: Opacity for the layer if it should be changed.
+        :param timeout: Execution timeout in seconds.
         :return: :py:class:`~pgimp.GimpFile.GimpFile`
         """
         code = textwrap.dedent(
@@ -542,16 +616,25 @@ class GimpFile:
             new_type.value,
         )
 
-        self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds, parameters={
-            'params': {
-                'new_visibility': new_visibility,
-                'new_position': new_position,
-                'new_opacity': new_opacity,
+        self._gsr.execute(
+            code, 
+            timeout_in_seconds=self._long_running_timeout_in_seconds if timeout is None else timeout, 
+            parameters={
+                'params': {
+                    'new_visibility': new_visibility,
+                    'new_position': new_position,
+                    'new_opacity': new_opacity,
+                }
             }
-        })
+        )
         return self
 
-    def merge_layer_from_file(self, other_file: 'GimpFile', name: str) -> 'GimpFile':
+    def merge_layer_from_file(
+        self,
+        other_file: 'GimpFile',
+        name: str,
+        timeout: Optional[int] = None,
+    ) -> 'GimpFile':
         """
         Merges a layer from another file into the current file. The layer must exist in the current file.
 
@@ -574,6 +657,7 @@ class GimpFile:
 
         :param other_file: The gimp file from which the layer contents are merged into the current file.
         :param name: Name of the layer to merge.
+        :param timeout: Execution timeout in seconds.
         :return: :py:class:`~pgimp.GimpFile.GimpFile`
         """
         code = textwrap.dedent(
@@ -590,12 +674,20 @@ class GimpFile:
             escape_single_quotes(name)
         )
 
-        self._gsr.execute(code, timeout_in_seconds=self._layer_conversion_timeout_in_seconds)
+        self._gsr.execute(
+            code, 
+            timeout_in_seconds=self._long_running_timeout_in_seconds if timeout is None else timeout
+        )
         return self
 
-    def layers(self) -> List[Layer]:
+    def layers(
+        self,
+        timeout: Optional[int] = None,
+    ) -> List[Layer]:
         """
         Returns the image layers. The topmost layer is the first element, the bottommost the last element.
+        
+        :param timeout: Execution timeout in seconds.
         :return: List of :py:class:`~pgimp.layers.Layer`.
         """
         code = textwrap.dedent(
@@ -617,7 +709,10 @@ class GimpFile:
             """.format(escape_single_quotes(self._file))
         )
 
-        result = self._gsr.execute_and_parse_json(code, timeout_in_seconds=self._short_running_timeout_in_seconds)
+        result = self._gsr.execute_and_parse_json(
+            code, 
+            timeout_in_seconds=self._short_running_timeout_in_seconds if timeout is None else timeout
+        )
         layers = []
         for idx, layer_properties in enumerate(result):
             layer_properties['position'] = idx
@@ -625,7 +720,10 @@ class GimpFile:
 
         return layers
 
-    def layer_names(self) -> List[str]:
+    def layer_names(
+        self,
+        timeout: Optional[int] = None,
+    ) -> List[str]:
         """
         Returns the names of the layers in the gimp file. The topmost layer is the first element,
         the bottommost the last element.
@@ -641,12 +739,18 @@ class GimpFile:
         ...         .add_layer_from_numpy('Black', np.zeros(shape=(2, 2), dtype=np.uint8))
         ...     gimp_file.layer_names()
         ['Black', 'Background']
-
+        
+        :param timeout: Execution timeout in seconds.
         :return: List of layer names.
         """
-        return list(map(lambda l: l.name, self.layers()))
+        return list(map(lambda l: l.name, self.layers(
+            timeout=self._short_running_timeout_in_seconds if timeout is None else timeout)))
 
-    def remove_layer(self, layer_name: str) -> 'GimpFile':
+    def remove_layer(
+        self,
+        layer_name: str,
+        timeout: Optional[int] = None,
+    ) -> 'GimpFile':
         """
         Removes a layer from the gimp file.
 
@@ -664,6 +768,7 @@ class GimpFile:
         ['Black']
 
         :param layer_name: Name of the layer to remove.
+        :param timeout: Execution timeout in seconds.
         :return: :py:class:`~pgimp.GimpFile.GimpFile`
         """
         code = textwrap.dedent(
@@ -676,10 +781,16 @@ class GimpFile:
             """
         ).format(escape_single_quotes(self._file), escape_single_quotes(layer_name))
 
-        self._gsr.execute(code, timeout_in_seconds=self._short_running_timeout_in_seconds)
+        self._gsr.execute(
+            code, 
+            timeout_in_seconds=self._short_running_timeout_in_seconds if timeout is None else timeout
+        )
         return self
 
-    def dimensions(self) -> Tuple[int, int]:
+    def dimensions(
+        self,
+        timeout: Optional[int] = None,
+    ) -> Tuple[int, int]:
         """
         Return the image dimensions (width, height).
 
@@ -692,6 +803,7 @@ class GimpFile:
         ...     gimp_file.dimensions()
         (2, 3)
 
+        :param timeout: Execution timeout in seconds.
         :return: Tuple of width and height.
         """
         code = textwrap.dedent(
@@ -704,10 +816,17 @@ class GimpFile:
             """
         ).format(escape_single_quotes(self._file))
 
-        dimensions = self._gsr.execute_and_parse_json(code, timeout_in_seconds=self._short_running_timeout_in_seconds)
+        dimensions = self._gsr.execute_and_parse_json(
+            code, 
+            timeout_in_seconds=self._short_running_timeout_in_seconds if timeout is None else timeout
+        )
         return tuple(dimensions)
 
-    def export(self, file: str) -> 'GimpFile':
+    def export(
+        self,
+        file: str,
+        timeout: Optional[int] = None,
+    ) -> 'GimpFile':
         """
         Export a gimp file to another file format based on the file extension.
 
@@ -728,6 +847,7 @@ class GimpFile:
         array([[[127, 255]]], dtype=uint8)
 
         :param file: Filename including the desired extension to export to.
+        :param timeout: Execution timeout in seconds.
         :return: :py:class:`~pgimp.GimpFile.GimpFile`
         """
 
@@ -742,5 +862,8 @@ class GimpFile:
             """
         ).format(escape_single_quotes(self._file), escape_single_quotes(file))
 
-        self._gsr.execute(code, timeout_in_seconds=self._short_running_timeout_in_seconds)
+        self._gsr.execute(
+            code, 
+            timeout_in_seconds=self._short_running_timeout_in_seconds if timeout is None else timeout
+        )
         return self
