@@ -22,7 +22,7 @@ class LayerDoesNotExistException(LayerException):
     pass
 
 
-def copy_or_merge_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_dst=0):
+def copy_or_merge_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_dst=0, clear_selection=True):
     """
     :type image_src: gimp.Image
     :type layer_name_src: str
@@ -30,8 +30,12 @@ def copy_or_merge_layer(image_src, layer_name_src, image_dst, layer_name_dst, po
     :type layer_name_dst: str
     :type position_dst: int
     :type merge: bool
+    :type clear_selection: bool 
     :rtype: gimp.Layer
     """
+    if clear_selection:
+        gimp.pdb.gimp_selection_none(image_src)
+    
     layer_src = gimp.pdb.gimp_image_get_layer_by_name(image_src, layer_name_src)
     if layer_src is None:
         raise LayerDoesNotExistException('Missing source layer ' + layer_name_src + '.')
@@ -55,7 +59,7 @@ def copy_or_merge_layer(image_src, layer_name_src, image_dst, layer_name_dst, po
     return layer_dst
 
 
-def copy_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_dst=0):
+def copy_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_dst=0, clear_selection=True):
     """
     :type image_src: gimp.Image
     :type layer_name_src: str
@@ -63,15 +67,16 @@ def copy_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_ds
     :type layer_name_dst: str
     :type position_dst: int
     :type merge: bool
+    :type clear_selection: bool
     :rtype: gimp.Layer
     """
     layer_dst = gimp.pdb.gimp_image_get_layer_by_name(image_dst, layer_name_dst)
     if layer_dst is not None:
         raise LayerExistsException('Destination layer ' + layer_name_dst + ' already exists.')
-    return copy_or_merge_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_dst)
+    return copy_or_merge_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_dst, clear_selection)
 
 
-def merge_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_dst=0):
+def merge_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_dst=0, clear_selection=True):
     """
     :type image_src: gimp.Image
     :type layer_name_src: str
@@ -79,12 +84,13 @@ def merge_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_d
     :type layer_name_dst: str
     :type position_dst: int
     :type merge: bool
+    :type clear_selection: bool
     :rtype: gimp.Layer
     """
     layer_dst = gimp.pdb.gimp_image_get_layer_by_name(image_dst, layer_name_dst)
     if layer_dst is None:
         raise LayerDoesNotExistException('Destination layer ' + layer_name_dst + ' does not exist.')
-    return copy_or_merge_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_dst)
+    return copy_or_merge_layer(image_src, layer_name_src, image_dst, layer_name_dst, position_dst, clear_selection)
 
 
 def reorder_layer(image, layer, position):
@@ -96,7 +102,15 @@ def reorder_layer(image, layer, position):
     gimp.pdb.gimp_image_reorder_item(image, layer, None, position)
 
 
-def merge_mask_layer(image_src, layer_name_src, image_dst, layer_name_dst, mask_foreground_color, position_dst=0):
+def merge_mask_layer(
+    image_src, 
+    layer_name_src, 
+    image_dst, 
+    layer_name_dst, 
+    mask_foreground_color, 
+    position_dst=0, 
+    clear_selection=True
+):
     """
     :type image_src: gimp.Image
     :type layer_name_src: str
@@ -104,8 +118,12 @@ def merge_mask_layer(image_src, layer_name_src, image_dst, layer_name_dst, mask_
     :type layer_name_dst: str
     :type mask_foreground_color: int
     :type position_dst: int
+    :type clear_selection: bool
     :rtype: gimp.Layer
     """
+    if clear_selection:
+        gimp.pdb.gimp_selection_none(image_src)
+
     if mask_foreground_color not in [0, 1]:
         raise ValueError('Mask foreground color must be 1 for white and 0 for black')
     if image_dst.base_type != image_src.base_type:

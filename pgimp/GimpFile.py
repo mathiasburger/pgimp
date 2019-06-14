@@ -145,7 +145,7 @@ class GimpFile:
         self,
         width: int,
         height: int,
-        type: GimpFileType,
+        type: GimpFileType = GimpFileType.RGB,
         timeout: Optional[int] = None,
     ) -> 'GimpFile':
         """
@@ -403,7 +403,7 @@ class GimpFile:
         """
         return self.layers_to_numpy(
             [layer_name],
-            timeout_in_seconds=self.long_running_timeout_in_seconds if timeout is None else timeout
+            timeout=self.long_running_timeout_in_seconds if timeout is None else timeout
         )
 
     def layers_to_numpy(
@@ -633,6 +633,7 @@ class GimpFile:
         self,
         other_file: 'GimpFile',
         name: str,
+        clear_selection: bool = True,
         timeout: Optional[int] = None,
     ) -> 'GimpFile':
         """
@@ -657,6 +658,7 @@ class GimpFile:
 
         :param other_file: The gimp file from which the layer contents are merged into the current file.
         :param name: Name of the layer to merge.
+        :param clear_selection: Clear selection before merging to avoid only merging the selection.
         :param timeout: Execution timeout in seconds.
         :return: :py:class:`~pgimp.GimpFile.GimpFile`
         """
@@ -666,12 +668,13 @@ class GimpFile:
             from pgimp.gimp.layer import merge_layer
 
             with XcfFile('{1:s}') as image_src, XcfFile('{0:s}', save=True) as image_dst:
-                merge_layer(image_src, '{2:s}', image_dst, '{2:s}', 0)
+                merge_layer(image_src, '{2:s}', image_dst, '{2:s}', 0, {3:s})
             """
         ).format(
             escape_single_quotes(self._file),
             escape_single_quotes(other_file._file),
-            escape_single_quotes(name)
+            escape_single_quotes(name),
+            str(clear_selection)
         )
 
         self._gsr.execute(

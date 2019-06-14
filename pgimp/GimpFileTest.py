@@ -132,6 +132,40 @@ def test_merge_layer_from_file():
         assert np.all([240, 255, 0] == new_layer_contents)
 
 
+def test_merge_layer_from_file_with_cleared_selection():
+    src = file.relative_to(__file__, 'test-resources/selection.xcf')
+    with TempFile('.xcf') as dst:
+        src_file = GimpFile(src)
+        dst_file = GimpFile(dst)
+        dst_file.create('Background', np.zeros(shape=(3, 3, 3), dtype=np.uint8))
+        dst_file.merge_layer_from_file(src_file, 'Background')
+
+        new_layer_contents = dst_file.layer_to_numpy('Background')
+
+        assert np.all(np.array([
+            [[255, 255, 255], [255, 255, 255], [255, 255, 255]],
+            [[255, 0, 0], [255, 0, 0], [255, 255, 255]],
+            [[255, 255, 255], [255, 255, 255], [255, 255, 255]],
+        ], dtype=np.uint8) == new_layer_contents)
+
+
+def test_merge_layer_from_file_without_cleared_selection():
+    src = file.relative_to(__file__, 'test-resources/selection.xcf')
+    with TempFile('.xcf') as dst:
+        src_file = GimpFile(src)
+        dst_file = GimpFile(dst)
+        dst_file.create('Background', np.zeros(shape=(3, 3, 3), dtype=np.uint8))
+        dst_file.merge_layer_from_file(src_file, 'Background', clear_selection=False)
+
+        new_layer_contents = dst_file.layer_to_numpy('Background')
+
+        assert np.all(np.array([
+            [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
+            [[255, 0, 0], [255, 0, 0], [0, 0, 0]],
+            [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
+        ], dtype=np.uint8) == new_layer_contents)
+
+
 def test_layers():
     layers = rgb_file.layers()
 
