@@ -5,5 +5,4 @@
 * pgimp.GimpFile.GimpFile#add_layer_from_file: add_layer_from_gimp_file, add_layer_from_file
 * pgimp.gimp.layer.add_layer_from_file: currently only first layer is copied but when the image has multiple layers it would be more safe to merge visible layers
 
-* each timeout in GimpFile should be an optional parameter of the function that can override the default
-* timeouts in GimpFile should not be protected parameters but be configurable in the constructor
+* there should be a method to clear current selections because layer copying will not be correct when active selections exist

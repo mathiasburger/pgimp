@@ -73,8 +73,8 @@ class GimpFile:
         super().__init__()
         self._file = file
         self._gsr = GimpScriptRunner()
-        self._long_running_timeout_in_seconds = long_running_timeout_in_seconds
-        self._short_running_timeout_in_seconds = short_running_timeout_in_seconds
+        self.long_running_timeout_in_seconds = long_running_timeout_in_seconds
+        self.short_running_timeout_in_seconds = short_running_timeout_in_seconds
 
     def get_file(self):
         """
@@ -135,7 +135,7 @@ class GimpFile:
 
         self._gsr.execute(
             code,
-            timeout_in_seconds=self._long_running_timeout_in_seconds if timeout is None else timeout
+            timeout_in_seconds=self.long_running_timeout_in_seconds if timeout is None else timeout
         )
 
         os.remove(tmpfile)
@@ -177,7 +177,7 @@ class GimpFile:
 
         self._gsr.execute(
             code,
-            timeout_in_seconds=self._short_running_timeout_in_seconds if timeout is None else timeout
+            timeout_in_seconds=self.short_running_timeout_in_seconds if timeout is None else timeout
         )
         return self
 
@@ -265,7 +265,7 @@ class GimpFile:
 
         self._gsr.execute(
             code,
-            timeout_in_seconds=self._long_running_timeout_in_seconds if timeout is None else timeout
+            timeout_in_seconds=self.long_running_timeout_in_seconds if timeout is None else timeout
         )
 
         os.remove(tmpfile)
@@ -305,7 +305,7 @@ class GimpFile:
 
         self._gsr.execute(
             code,
-            timeout_in_seconds=self._short_running_timeout_in_seconds if timeout is None else timeout
+            timeout_in_seconds=self.short_running_timeout_in_seconds if timeout is None else timeout
         )
         return self
 
@@ -352,7 +352,7 @@ class GimpFile:
 
         self._gsr.execute(
             code,
-            timeout_in_seconds=self._short_running_timeout_in_seconds if timeout is None else timeout
+            timeout_in_seconds=self.short_running_timeout_in_seconds if timeout is None else timeout
         )
         return self
 
@@ -403,7 +403,7 @@ class GimpFile:
         """
         return self.layers_to_numpy(
             [layer_name],
-            timeout_in_seconds=self._long_running_timeout_in_seconds if timeout is None else timeout
+            timeout_in_seconds=self.long_running_timeout_in_seconds if timeout is None else timeout
         )
 
     def layers_to_numpy(
@@ -445,7 +445,7 @@ class GimpFile:
                 """,
             ).format(escape_single_quotes(self._file)),
             parameters={'layer_names': layer_names},
-            timeout_in_seconds=self._long_running_timeout_in_seconds if timeout is None else timeout
+            timeout_in_seconds=self.long_running_timeout_in_seconds if timeout is None else timeout
         )
 
         return np.load(io.BytesIO(bytes))
@@ -514,7 +514,7 @@ class GimpFile:
 
         self._gsr.execute(
             code, 
-            timeout_in_seconds=self._long_running_timeout_in_seconds if timeout is None else timeout
+            timeout_in_seconds=self.long_running_timeout_in_seconds if timeout is None else timeout
         )
 
         os.remove(tmpfile)
@@ -618,7 +618,7 @@ class GimpFile:
 
         self._gsr.execute(
             code, 
-            timeout_in_seconds=self._long_running_timeout_in_seconds if timeout is None else timeout, 
+            timeout_in_seconds=self.long_running_timeout_in_seconds if timeout is None else timeout,
             parameters={
                 'params': {
                     'new_visibility': new_visibility,
@@ -676,7 +676,7 @@ class GimpFile:
 
         self._gsr.execute(
             code, 
-            timeout_in_seconds=self._long_running_timeout_in_seconds if timeout is None else timeout
+            timeout_in_seconds=self.long_running_timeout_in_seconds if timeout is None else timeout
         )
         return self
 
@@ -711,7 +711,7 @@ class GimpFile:
 
         result = self._gsr.execute_and_parse_json(
             code, 
-            timeout_in_seconds=self._short_running_timeout_in_seconds if timeout is None else timeout
+            timeout_in_seconds=self.short_running_timeout_in_seconds if timeout is None else timeout
         )
         layers = []
         for idx, layer_properties in enumerate(result):
@@ -744,7 +744,7 @@ class GimpFile:
         :return: List of layer names.
         """
         return list(map(lambda l: l.name, self.layers(
-            timeout=self._short_running_timeout_in_seconds if timeout is None else timeout)))
+            timeout=self.short_running_timeout_in_seconds if timeout is None else timeout)))
 
     def remove_layer(
         self,
@@ -783,7 +783,7 @@ class GimpFile:
 
         self._gsr.execute(
             code, 
-            timeout_in_seconds=self._short_running_timeout_in_seconds if timeout is None else timeout
+            timeout_in_seconds=self.short_running_timeout_in_seconds if timeout is None else timeout
         )
         return self
 
@@ -818,7 +818,7 @@ class GimpFile:
 
         dimensions = self._gsr.execute_and_parse_json(
             code, 
-            timeout_in_seconds=self._short_running_timeout_in_seconds if timeout is None else timeout
+            timeout_in_seconds=self.short_running_timeout_in_seconds if timeout is None else timeout
         )
         return tuple(dimensions)
 
@@ -864,6 +864,6 @@ class GimpFile:
 
         self._gsr.execute(
             code, 
-            timeout_in_seconds=self._short_running_timeout_in_seconds if timeout is None else timeout
+            timeout_in_seconds=self.short_running_timeout_in_seconds if timeout is None else timeout
         )
         return self
