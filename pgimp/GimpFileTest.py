@@ -86,6 +86,28 @@ def test_add_layer_from_numpy():
     assert np.all(layer_fg == actual_fg)
 
 
+def test_add_layer_from_numpy_with_position_index():
+    data = np.array([[[255, 255, 255]]], dtype=np.uint8)
+    with TempFile('.xcf') as tmp_file:
+        gimp_file = GimpFile(tmp_file)
+        gimp_file.create('Background', data)
+        gimp_file.add_layer_from_numpy('Layer 1', data, position=1)
+        gimp_file.add_layer_from_numpy('Layer 2', data, position=1)
+
+        assert gimp_file.layer_names() == ['Background', 'Layer 2', 'Layer 1']
+
+
+def test_add_layer_from_numpy_with_position_layer_name():
+    data = np.array([[[255, 255, 255]]], dtype=np.uint8)
+    with TempFile('.xcf') as tmp_file:
+        gimp_file = GimpFile(tmp_file)
+        gimp_file.create('Background', data)
+        gimp_file.add_layer_from_numpy('Layer 1', data, position='Background')
+        gimp_file.add_layer_from_numpy('Layer 2', data, position='Background')
+
+        assert gimp_file.layer_names() == ['Layer 1', 'Layer 2', 'Background']
+
+
 def test_add_layer_from_file():
     with TempFile('.xcf') as dst, TempFile('.xcf') as src:
         layer_bg = np.array([

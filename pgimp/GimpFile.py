@@ -455,7 +455,8 @@ class GimpFile:
         layer_name: str,
         layer_content: np.ndarray,
         opacity: float = 100.0,
-        visible: bool = True, position: int = 0,
+        visible: bool = True,
+        position: Union[int, str] = 0,
         type: LayerType = None,
         timeout: Optional[int] = None,
     ) -> 'GimpFile':
@@ -479,6 +480,7 @@ class GimpFile:
         :param opacity: How transparent the layer should be (opacity is the inverse of transparency).
         :param visible: Whether the layer should be visible.
         :param position: Position in the stack of layers. On top = 0, bottom = number of layers.
+            In case a layer name is specified, the new layer will be added on top of the layer with the given name.
         :param type: Layer type. Indexed images should use indexed layers.
         :param timeout: Execution timeout in seconds.
         :return: :py:class:`~pgimp.GimpFile.GimpFile`
@@ -493,11 +495,16 @@ class GimpFile:
         code = textwrap.dedent(
             """
             import gimpenums
+            import gimp
             from pgimp.gimp.file import XcfFile
             from pgimp.gimp.layer import add_layer_from_numpy
+            from pgimp.gimp.parameter import get_json
 
             with XcfFile('{2:s}', save=True) as image:
-                add_layer_from_numpy(image, '{5:s}', '{4:s}', {0:d}, {1:d}, {3:d}, {8:d}, float({7:s}),
+                position = get_json('position')[0]
+                if isinstance(position, basestring):
+                    position = gimp.pdb.gimp_image_get_item_position(image, gimp.pdb.gimp_image_get_layer_by_name(image, position))
+                add_layer_from_numpy(image, '{5:s}', '{4:s}', {0:d}, {1:d}, {3:d}, position, float({7:s}),
                                      gimpenums.NORMAL_MODE, {6:s})
             """
         ).format(
@@ -508,12 +515,12 @@ class GimpFile:
             escape_single_quotes(layer_name),
             escape_single_quotes(tmpfile),
             str(visible),
-            str(opacity),
-            position
+            str(opacity)
         )
 
         self._gsr.execute(
-            code, 
+            code,
+            parameters={'position': [position]},
             timeout_in_seconds=self.long_running_timeout_in_seconds if timeout is None else timeout
         )
 
