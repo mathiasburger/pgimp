@@ -649,6 +649,8 @@ class GimpFileCollection:
     ):
         """
         Clears active selections.
+
+        :param timeout_in_seconds: Script execution timeout in seconds.
         """
         script = textwrap.dedent(
             """
@@ -669,7 +671,64 @@ class GimpFileCollection:
             timeout_in_seconds=timeout_in_seconds
         )
 
+    def remove_layers_by_name(
+        self,
+        layer_names: List[str],
+        timeout_in_seconds: float = None
+    ):
+        """
+        Removes layers by name.
 
+        Example:
+
+        >>> from tempfile import TemporaryDirectory
+        >>> import numpy as np
+        >>> from pgimp.GimpFileCollection import GimpFileCollection
+        >>> from pgimp.GimpFile import GimpFile
+        >>> data = np.array([[0, 255]], dtype=np.uint8)
+        >>> with TemporaryDirectory('_files') as dir:
+        ...    file1 = GimpFile(os.path.join(dir, 'file1.xcf')) \\
+        ...        .create('Background', data) \\
+        ...        .add_layer_from_numpy('Layer 1', data) \\
+        ...        .add_layer_from_numpy('Layer 2', data) \\
+        ...        .add_layer_from_numpy('Layer 3', data)
+        ...    file2 = GimpFile(os.path.join(dir, 'file2.xcf')) \\
+        ...        .create('Background', data) \\
+        ...        .add_layer_from_numpy('Layer 1', data) \\
+        ...        .add_layer_from_numpy('Layer 2', data)
+        ...
+        ...    collection = GimpFileCollection([file1.get_file(), file2.get_file()])
+        ...    collection.remove_layers_by_name(['Layer 1', 'Layer 3'], timeout_in_seconds=10)
+        ...
+        ...    [file1.layer_names(), file2.layer_names()]
+        [['Layer 2', 'Background'], ['Layer 2', 'Background']]
+
+        :param layer_names: List of layer names.
+        :param timeout_in_seconds: Script execution timeout in seconds.
+        """
+        script = textwrap.dedent(
+            """
+            import gimp
+            from pgimp.gimp.parameter import get_json, return_json
+            from pgimp.gimp.file import XcfFile
+            
+            files = get_json('__files__')
+            layer_names = get_json('layer_names')
+            for file in files:
+                with XcfFile(file, save=True) as image:
+                    for layer_name in layer_names:
+                        layer = gimp.pdb.gimp_image_get_layer_by_name(image, layer_name)
+                        if layer is not None:
+                            gimp.pdb.gimp_image_remove_layer(image, layer)
+            
+            return_json(None)
+            """
+        )
+        self.execute_script_and_return_json(
+            script,
+            parameters={'layer_names': layer_names},
+            timeout_in_seconds=timeout_in_seconds
+        )
 
     @classmethod
     def create_from_pathname(cls, pathname: str):
