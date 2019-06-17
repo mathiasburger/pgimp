@@ -8,6 +8,7 @@ import tempfile
 import numpy as np
 from pytest import approx
 
+import gimpenums
 from pgimp.GimpFile import GimpFile, LayerType, ColorMap, GimpFileType
 from pgimp.util import file
 from pgimp.util.TempFile import TempFile
@@ -71,6 +72,20 @@ def test_add_layers_from_numpy():
             opacity=55.,
             visible=False,
             position='Background'
+        )
+        assert gimp_file.layer_names() == ['Layer 1', 'Layer 2', 'Background']
+
+
+def test_add_layers_from_numpy_with_list_config():
+    with TempFile('.xcf') as f:
+        gimp_file = GimpFile(f).create('Background', np.zeros(shape=(1, 2), dtype=np.uint8))
+        gimp_file.add_layers_from_numpy(
+            ['Layer 1', 'Layer 2'],
+            np.ones(shape=(2, 1, 2), dtype=np.uint8) * 255,
+            opacity=[100., 55.],
+            visible=[False, True],
+            position='Background',
+            blend_mode=gimpenums.NORMAL_MODE
         )
         assert gimp_file.layer_names() == ['Layer 1', 'Layer 2', 'Background']
 

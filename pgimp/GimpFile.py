@@ -11,6 +11,7 @@ from typing import List, Union, Tuple, Optional
 
 import numpy as np
 
+import gimpenums
 from pgimp.GimpException import GimpException
 from pgimp.GimpScriptRunner import GimpScriptRunner
 from pgimp.layers.Layer import Layer
@@ -499,10 +500,11 @@ class GimpFile:
         self,
         layer_names: List[str],
         layer_contents: np.ndarray,
-        opacity: float = 100.0,
-        visible: bool = True,
+        opacity: Union[float, List[float]] = 100.0,
+        visible: Union[bool, List[bool]] = True,
         position: Union[int, str] = 0,
         type: LayerType = None,
+        blend_mode: Union[int, List[int]] = gimpenums.NORMAL_MODE,
         timeout: Optional[int] = None,
     ) -> 'GimpFile':
         """
@@ -527,6 +529,7 @@ class GimpFile:
         :param position: Position in the stack of layers. On top = 0, bottom = number of layers.
             In case a layer name is specified, the new layers will be added on top of the layer with the given name.
         :param type: Layer type. Indexed images should use indexed layers.
+        :param blend_mode: Affects the display of the current layer. Blend mode normal means no blending.
         :param timeout: Execution timeout in seconds.
         :return: :py:class:`~pgimp.GimpFile.GimpFile`
         """
@@ -544,22 +547,23 @@ class GimpFile:
 
         code = textwrap.dedent(
             """
-        import gimpenums
-        from pgimp.gimp.file import XcfFile
-        from pgimp.gimp.layer import add_layers_from_numpy
-        from pgimp.gimp.parameter import get_json, get_int, get_string, get_float, get_bool
-        
-        with XcfFile(get_string('file'), save=True) as image:
-            position = get_json('position')[0]
-            add_layers_from_numpy(
-                image, get_string('tmpfile'), 
-                get_json('layer_names'), 
-                get_int('width'), 
-                get_int('height'), 
-                get_int('layer_type'), 
-                position, get_float('opacity'),
-                gimpenums.NORMAL_MODE, get_bool('visible')
-            )
+            from pgimp.gimp.file import XcfFile
+            from pgimp.gimp.layer import add_layers_from_numpy
+            from pgimp.gimp.parameter import get_json, get_int, get_string
+            
+            with XcfFile(get_string('file'), save=True) as image:
+                position = get_json('position')[0]
+                add_layers_from_numpy(
+                    image, get_string('tmpfile'), 
+                    get_json('layer_names'), 
+                    get_int('width'), 
+                    get_int('height'), 
+                    get_int('layer_type'), 
+                    position, 
+                    get_json('opacity')[0],
+                    get_json('blend_mode')[0], 
+                    get_json('visible')[0]
+                )
             """
         )
 
@@ -572,9 +576,10 @@ class GimpFile:
                 'layer_type': layer_type,
                 'layer_names': layer_names,
                 'tmpfile': tmpfile,
-                'visible': visible,
-                'opacity': opacity,
-                'position': [position]
+                'visible': [visible],
+                'opacity': [opacity],
+                'position': [position],
+                'blend_mode': [blend_mode],
             },
             timeout_in_seconds=self.long_running_timeout_in_seconds if timeout is None else timeout
         )

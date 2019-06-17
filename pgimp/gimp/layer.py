@@ -235,7 +235,7 @@ def add_layer_from_numpy(image, numpy_file, name, width, height, type, position=
     :rtype: gimp.Layer
     """
     bytes = np.uint8(np.load(numpy_file)).tobytes()
-    return add_layer_from_bytes(image, bytes, name, width, height, type, position, opacity, mode, visible)
+    return add_layer_from_bytes(image, bytes, name, width, height, type, position, float(opacity), mode, visible)
 
 
 def add_layers_from_numpy(image, numpy_file, layer_names, width, height, type, position=0, opacity=100., mode=gimpenums.NORMAL_MODE, visible=True):
@@ -247,16 +247,27 @@ def add_layers_from_numpy(image, numpy_file, layer_names, width, height, type, p
     :type height: int
     :type type: int
     :type position: int or str
-    :type opacity: float
-    :type mode: int
-    :type visible: bool
+    :type opacity: float or List[float]
+    :type mode: int or List[int]
+    :type visible: bool or List[bool]
     :rtype: gimp.Layer
     """
     numpy_array = np.load(numpy_file)
     layers = []
     for i in range(len(numpy_array)):
         bytes = np.uint8(numpy_array[i]).tobytes()
-        layers.append(add_layer_from_bytes(image, bytes, layer_names[i], width, height, type, position, opacity, mode, visible))
+        layers.append(add_layer_from_bytes(
+            image,
+            bytes,
+            layer_names[i],
+            width,
+            height,
+            type,
+            position,
+            opacity[i] if isinstance(opacity, list) else opacity,
+            mode[i] if isinstance(mode, list) else mode,
+            visible[i] if isinstance(visible, list) else visible
+        ))
     return layers
 
 
