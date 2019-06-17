@@ -485,42 +485,97 @@ class GimpFile:
         :param timeout: Execution timeout in seconds.
         :return: :py:class:`~pgimp.GimpFile.GimpFile`
         """
-        height, width, depth, image_type, layer_type = self._numpy_array_info(layer_content)
+        return self.add_layers_from_numpy(
+            [layer_name],
+            np.expand_dims(layer_content, axis=0),
+            opacity,
+            visible,
+            position,
+            type,
+            timeout
+        )
+
+    def add_layers_from_numpy(
+        self,
+        layer_names: List[str],
+        layer_contents: np.ndarray,
+        opacity: float = 100.0,
+        visible: bool = True,
+        position: Union[int, str] = 0,
+        type: LayerType = None,
+        timeout: Optional[int] = None,
+    ) -> 'GimpFile':
+        """
+        Adds new layers to the gimp file from numpy data, usually as unsigned 8 bit integers.
+
+        Example:
+
+        >>> from pgimp.GimpFile import GimpFile
+        >>> from pgimp.util.TempFile import TempFile
+        >>> import numpy as np
+        >>> with TempFile('.xcf') as f:  # doctest:+ELLIPSIS
+        ...     gimp_file = GimpFile(f).create('Background', np.zeros(shape=(1, 2), dtype=np.uint8))
+        ...     gimp_file.add_layers_from_numpy(['Layer 1', 'Layer 2'], np.ones(shape=(2, 1, 2), dtype=np.uint8)*255, opacity=55., visible=False, position='Background')
+        ...     gimp_file.layer_names()
+        <...>
+        ['Layer 1', 'Layer 2', 'Background']
+
+        :param layer_names: Names of the layers to add.
+        :param layer_contents: Layer content, usually as unsigned 8 bit integers. First axis indexes the layer.
+        :param opacity: How transparent the layer should be (opacity is the inverse of transparency).
+        :param visible: Whether the layer should be visible.
+        :param position: Position in the stack of layers. On top = 0, bottom = number of layers.
+            In case a layer name is specified, the new layers will be added on top of the layer with the given name.
+        :param type: Layer type. Indexed images should use indexed layers.
+        :param timeout: Execution timeout in seconds.
+        :return: :py:class:`~pgimp.GimpFile.GimpFile`
+        """
+        if len(layer_contents) == 0:
+            raise ValueError('Layer contents must not be empty')
+        if len(layer_contents) != len(layer_names):
+            raise ValueError('Layer contents must exist for each layer name.')
+
+        height, width, depth, image_type, layer_type = self._numpy_array_info(layer_contents[0])
         if type is not None:
             layer_type = type.value
 
         tmpfile = tempfile.mktemp(suffix='.npy')
-        np.save(tmpfile, layer_content)
+        np.save(tmpfile, layer_contents)
 
         code = textwrap.dedent(
             """
-            import gimpenums
-            import gimp
-            from pgimp.gimp.file import XcfFile
-            from pgimp.gimp.layer import add_layer_from_numpy
-            from pgimp.gimp.parameter import get_json
-
-            with XcfFile('{2:s}', save=True) as image:
-                position = get_json('position')[0]
-                if isinstance(position, basestring):
-                    position = gimp.pdb.gimp_image_get_item_position(image, gimp.pdb.gimp_image_get_layer_by_name(image, position))
-                add_layer_from_numpy(image, '{5:s}', '{4:s}', {0:d}, {1:d}, {3:d}, position, float({7:s}),
-                                     gimpenums.NORMAL_MODE, {6:s})
+        import gimpenums
+        from pgimp.gimp.file import XcfFile
+        from pgimp.gimp.layer import add_layers_from_numpy
+        from pgimp.gimp.parameter import get_json, get_int, get_string, get_float, get_bool
+        
+        with XcfFile(get_string('file'), save=True) as image:
+            position = get_json('position')[0]
+            add_layers_from_numpy(
+                image, get_string('tmpfile'), 
+                get_json('layer_names'), 
+                get_int('width'), 
+                get_int('height'), 
+                get_int('layer_type'), 
+                position, get_float('opacity'),
+                gimpenums.NORMAL_MODE, get_bool('visible')
+            )
             """
-        ).format(
-            width,
-            height,
-            escape_single_quotes(self._file),
-            layer_type,
-            escape_single_quotes(layer_name),
-            escape_single_quotes(tmpfile),
-            str(visible),
-            str(opacity)
         )
 
         self._gsr.execute(
             code,
-            parameters={'position': [position]},
+            parameters={
+                'width': width,
+                'height': height,
+                'file': self._file,
+                'layer_type': layer_type,
+                'layer_names': layer_names,
+                'tmpfile': tmpfile,
+                'visible': visible,
+                'opacity': opacity,
+                'position': [position]
+            },
             timeout_in_seconds=self.long_running_timeout_in_seconds if timeout is None else timeout
         )
 

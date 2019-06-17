@@ -194,24 +194,25 @@ def remove_layer(image, layer_name):
     gimp.pdb.gimp_image_remove_layer(image, layer)
 
 
-def add_layer_from_numpy(image, numpy_file, name, width, height, type, position=0, opacity=100., mode=gimpenums.NORMAL_MODE, visible=True):
+def add_layer_from_bytes(image, bytes, name, width, height, type, position=0, opacity=100., mode=gimpenums.NORMAL_MODE, visible=True):
     """
     :type image: gimp.Image
-    :type numpy_file: str
-    :type name: strImage
+    :type bytes: bytes
+    :type name: str
     :type width: int
     :type height: int
     :type type: int
-    :type position: int
+    :type position: int or str
     :type opacity: float
     :type mode: int
     :type visible: bool
     :rtype: gimp.Layer
     """
+    if isinstance(position, basestring):
+        position = gimp.pdb.gimp_image_get_item_position(image, gimp.pdb.gimp_image_get_layer_by_name(image, position))
+
     layer = gimp.pdb.gimp_layer_new(image, width, height, type, name, opacity, mode)
     layer.visible = visible
-    array = np.load(numpy_file)
-    bytes = np.uint8(array).tobytes()
     region = layer.get_pixel_rgn(0, 0, layer.width, layer.height, True)
     region[:, :] = bytes
 
@@ -219,17 +220,60 @@ def add_layer_from_numpy(image, numpy_file, name, width, height, type, position=
     return layer
 
 
-def add_layer_from_file(image, image_file, name, position=0, opacity=100., mode=gimpenums.NORMAL_MODE, visible=True):
-    """"
+def add_layer_from_numpy(image, numpy_file, name, width, height, type, position=0, opacity=100., mode=gimpenums.NORMAL_MODE, visible=True):
+    """
     :type image: gimp.Image
-    :type image_file: str
+    :type numpy_file: str
     :type name: str
-    :type position: int
+    :type width: int
+    :type height: int
+    :type type: int
+    :type position: int or str
     :type opacity: float
     :type mode: int
     :type visible: bool
     :rtype: gimp.Layer
     """
+    bytes = np.uint8(np.load(numpy_file)).tobytes()
+    return add_layer_from_bytes(image, bytes, name, width, height, type, position, opacity, mode, visible)
+
+
+def add_layers_from_numpy(image, numpy_file, layer_names, width, height, type, position=0, opacity=100., mode=gimpenums.NORMAL_MODE, visible=True):
+    """
+    :type image: gimp.Image
+    :type numpy_file: str
+    :type layer_names: List[str]
+    :type width: int
+    :type height: int
+    :type type: int
+    :type position: int or str
+    :type opacity: float
+    :type mode: int
+    :type visible: bool
+    :rtype: gimp.Layer
+    """
+    numpy_array = np.load(numpy_file)
+    layers = []
+    for i in range(len(numpy_array)):
+        bytes = np.uint8(numpy_array[i]).tobytes()
+        layers.append(add_layer_from_bytes(image, bytes, layer_names[i], width, height, type, position, opacity, mode, visible))
+    return layers
+
+
+def add_layer_from_file(image, image_file, name, position=0, opacity=100., mode=gimpenums.NORMAL_MODE, visible=True):
+    """"
+    :type image: gimp.Image
+    :type image_file: str
+    :type name: str
+    :type position: int or str
+    :type opacity: float
+    :type mode: int
+    :type visible: bool
+    :rtype: gimp.Layer
+    """
+    if isinstance(position, basestring):
+        position = gimp.pdb.gimp_image_get_item_position(image, gimp.pdb.gimp_image_get_layer_by_name(image, position))
+
     image_from_file = gimp.pdb.gimp_file_load(image_file, image_file)
 
     layer = copy_layer(image_from_file, image_from_file.layers[0].name, image, name, position)

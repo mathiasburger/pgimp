@@ -62,6 +62,19 @@ def test_create():
     assert np.all(layer_bg == actual)
 
 
+def test_add_layers_from_numpy():
+    with TempFile('.xcf') as f:
+        gimp_file = GimpFile(f).create('Background', np.zeros(shape=(1, 2), dtype=np.uint8))
+        gimp_file.add_layers_from_numpy(
+            ['Layer 1', 'Layer 2'],
+            np.ones(shape=(2, 1, 2), dtype=np.uint8) * 255,
+            opacity=55.,
+            visible=False,
+            position='Background'
+        )
+        assert gimp_file.layer_names() == ['Layer 1', 'Layer 2', 'Background']
+
+
 def test_add_layer_from_numpy():
     tmp_file = tempfile.mktemp(suffix='.xcf')
     layer_bg = np.array([
