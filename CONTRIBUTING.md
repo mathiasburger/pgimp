@@ -92,3 +92,9 @@ Examples for tags (the script will prepend a `v` to the given name to indicate t
 ./tag.sh 1.0.0-rc-1
 ./tag.sh 1.0.0
 ```
+
+Package and upload:
+```
+./packaging.sh
+./packaging-upload.sh
+```
