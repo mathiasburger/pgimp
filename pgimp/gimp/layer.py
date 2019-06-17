@@ -264,9 +264,9 @@ def add_layers_from_numpy(image, numpy_file, layer_names, width, height, type, p
             height,
             type,
             position,
-            opacity[i] if isinstance(opacity, list) else opacity,
-            mode[i] if isinstance(mode, list) else mode,
-            visible[i] if isinstance(visible, list) else visible
+            opacity[i] if isinstance(opacity, list) else float(opacity),
+            mode[i] if isinstance(mode, list) else int(mode),
+            visible[i] if isinstance(visible, list) else bool(visible)
         ))
     return layers
 

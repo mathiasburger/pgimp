@@ -459,6 +459,7 @@ class GimpFile:
         visible: bool = True,
         position: Union[int, str] = 0,
         type: LayerType = None,
+        blend_mode: Union[int, List[int]] = gimpenums.NORMAL_MODE,
         timeout: Optional[int] = None,
     ) -> 'GimpFile':
         """
@@ -483,6 +484,7 @@ class GimpFile:
         :param position: Position in the stack of layers. On top = 0, bottom = number of layers.
             In case a layer name is specified, the new layer will be added on top of the layer with the given name.
         :param type: Layer type. Indexed images should use indexed layers.
+        :param blend_mode: Affects the display of the current layer. Blend mode normal means no blending.
         :param timeout: Execution timeout in seconds.
         :return: :py:class:`~pgimp.GimpFile.GimpFile`
         """
@@ -493,6 +495,7 @@ class GimpFile:
             visible,
             position,
             type,
+            blend_mode,
             timeout
         )
 
