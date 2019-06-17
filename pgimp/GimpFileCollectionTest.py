@@ -3,8 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 import os
-import tempfile
+import shutil
 import textwrap
+from tempfile import TemporaryDirectory
 
 import numpy as np
 import pytest
@@ -383,7 +384,7 @@ def test_execute_script_and_return_json_with_script_that_takes_multiple_files_us
 
 
 def test_copy_layer_from():
-    with tempfile.TemporaryDirectory('_src') as srcdir, tempfile.TemporaryDirectory('_dst') as dstdir:
+    with TemporaryDirectory('_src') as srcdir, TemporaryDirectory('_dst') as dstdir:
         src_1 = GimpFile(os.path.join(srcdir, 'file1.xcf'))\
             .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8))\
             .add_layer_from_numpy('White', np.ones(shape=(1, 1), dtype=np.uint8)*255)
@@ -410,7 +411,7 @@ def test_copy_layer_from():
 
 
 def test_merge_mask_layer_from_with_grayscale_and_foreground_color_white():
-    with tempfile.TemporaryDirectory('_src') as srcdir, tempfile.TemporaryDirectory('_dst') as dstdir:
+    with TemporaryDirectory('_src') as srcdir, TemporaryDirectory('_dst') as dstdir:
         src_1 = GimpFile(os.path.join(srcdir, 'file1.xcf'))\
             .create('Mask', np.array([[255, 0]], dtype=np.uint8))
 
@@ -432,7 +433,7 @@ def test_merge_mask_layer_from_with_grayscale_and_foreground_color_white():
 
 
 def test_merge_mask_layer_from_with_grayscale_and_foreground_color_black():
-    with tempfile.TemporaryDirectory('_src') as srcdir, tempfile.TemporaryDirectory('_dst') as dstdir:
+    with TemporaryDirectory('_src') as srcdir, TemporaryDirectory('_dst') as dstdir:
         src_1 = GimpFile(os.path.join(srcdir, 'file1.xcf'))\
             .create('Mask', np.array([[255, 0]], dtype=np.uint8))
 
@@ -454,7 +455,7 @@ def test_merge_mask_layer_from_with_grayscale_and_foreground_color_black():
 
 
 def test_merge_mask_layer_from_with_color():
-    with tempfile.TemporaryDirectory('_src') as srcdir, tempfile.TemporaryDirectory('_dst') as dstdir:
+    with TemporaryDirectory('_src') as srcdir, TemporaryDirectory('_dst') as dstdir:
         src_1 = GimpFile(os.path.join(srcdir, 'file1.xcf'))\
             .create('Mask', np.array([[[255, 255, 255], [0, 0, 0]]], dtype=np.uint8))
 
@@ -476,7 +477,7 @@ def test_merge_mask_layer_from_with_color():
 
 
 def test_merge_mask_layer_from_with_mask_not_available_in_files_in_both_collections_and_foreground_color_white():
-    with tempfile.TemporaryDirectory('_src') as srcdir, tempfile.TemporaryDirectory('_dst') as dstdir:
+    with TemporaryDirectory('_src') as srcdir, TemporaryDirectory('_dst') as dstdir:
         src_1 = GimpFile(os.path.join(srcdir, 'file1.xcf')) \
             .create_empty(2, 1, GimpFileType.GRAY)
 
@@ -493,7 +494,7 @@ def test_merge_mask_layer_from_with_mask_not_available_in_files_in_both_collecti
 
 
 def test_merge_mask_layer_from_with_mask_not_available_in_files_in_both_collections_and_foreground_color_black():
-    with tempfile.TemporaryDirectory('_src') as srcdir, tempfile.TemporaryDirectory('_dst') as dstdir:
+    with TemporaryDirectory('_src') as srcdir, TemporaryDirectory('_dst') as dstdir:
         src_1 = GimpFile(os.path.join(srcdir, 'file1.xcf')) \
             .create_empty(2, 1, GimpFileType.GRAY)
 
@@ -507,3 +508,60 @@ def test_merge_mask_layer_from_with_mask_not_available_in_files_in_both_collecti
 
         assert np.all(dst_1.layer_to_numpy('Mask') == [[255], [255]])
         assert ['Mask'] == dst_1.layer_names()
+
+
+def test_clear_selection():
+    file_with_selection_original = file.relative_to(__file__, 'test-resources/selection.xcf')
+    with TempFile('.xcf') as file_with_selection:
+        shutil.copyfile(file_with_selection_original, file_with_selection)
+        collection = GimpFileCollection([file_with_selection])
+
+        selections_before = _has_selections(collection)
+        assert selections_before[file_with_selection]
+
+        collection.clear_selection(timeout_in_seconds=10)
+
+        selections_after = _has_selections(collection)
+        assert not selections_after[file_with_selection]
+
+
+def _has_selections(collection):
+    result = collection.execute_script_and_return_json(
+        textwrap.dedent(
+            """
+            import gimp
+            from pgimp.gimp.parameter import get_json, return_json
+            from pgimp.gimp.file import XcfFile
+            
+            files = get_json('__files__')
+            selections = {}
+            for file in files:
+                with XcfFile(file, save=True) as image:
+                    selections[file] = not gimp.pdb.gimp_selection_is_empty(image)
+            
+            return_json(selections)
+            """
+        ),
+        timeout_in_seconds=10
+    )
+    return result
+
+
+def test_remove_layers_by_name():
+    data = np.array([[0, 255]], dtype=np.uint8)
+    with TemporaryDirectory('_files') as dir:
+        file1 = GimpFile(os.path.join(dir, 'file1.xcf')) \
+            .create('Background', data) \
+            .add_layer_from_numpy('Layer 1', data) \
+            .add_layer_from_numpy('Layer 2', data) \
+            .add_layer_from_numpy('Layer 3', data)
+        file2 = GimpFile(os.path.join(dir, 'file2.xcf')) \
+            .create('Background', data) \
+            .add_layer_from_numpy('Layer 1', data) \
+            .add_layer_from_numpy('Layer 2', data)
+
+        collection = GimpFileCollection([file1.get_file(), file2.get_file()])
+        collection.remove_layers_by_name(['Layer 1', 'Layer 3'], timeout_in_seconds=10)
+
+        assert file1.layer_names() == ['Layer 2', 'Background']
+        assert file2.layer_names() == ['Layer 2', 'Background']
