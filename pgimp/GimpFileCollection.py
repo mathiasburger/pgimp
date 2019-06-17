@@ -643,6 +643,34 @@ class GimpFileCollection:
         )
         return self
 
+    def clear_selection(
+        self,
+        timeout_in_seconds: float = None
+    ):
+        """
+        Clears active selections.
+        """
+        script = textwrap.dedent(
+            """
+            import gimp
+            from pgimp.gimp.parameter import get_json, return_json
+            from pgimp.gimp.file import XcfFile
+            
+            files = get_json('__files__')
+            for file in files:
+                with XcfFile(file, save=True) as image:
+                    gimp.pdb.gimp_selection_none(image)
+            
+            return_json(None)
+            """
+        )
+        self.execute_script_and_return_json(
+            script,
+            timeout_in_seconds=timeout_in_seconds
+        )
+
+
+
     @classmethod
     def create_from_pathname(cls, pathname: str):
         """

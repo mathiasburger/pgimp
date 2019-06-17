@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import os
+import shutil
 import tempfile
 import textwrap
 
@@ -507,3 +508,42 @@ def test_merge_mask_layer_from_with_mask_not_available_in_files_in_both_collecti
 
         assert np.all(dst_1.layer_to_numpy('Mask') == [[255], [255]])
         assert ['Mask'] == dst_1.layer_names()
+
+
+def test_clear_selection():
+    file_with_selection_original = file.relative_to(__file__, 'test-resources/selection.xcf')
+    with TempFile('.xcf') as file_with_selection:
+        shutil.copyfile(file_with_selection_original, file_with_selection)
+        collection = GimpFileCollection([file_with_selection])
+
+        selections_before = _has_selections(collection)
+        assert selections_before[file_with_selection]
+
+        collection.clear_selection(timeout_in_seconds=10)
+
+        selections_after = _has_selections(collection)
+        assert not selections_after[file_with_selection]
+
+        assert True
+
+
+def _has_selections(collection):
+    result = collection.execute_script_and_return_json(
+        textwrap.dedent(
+            """
+            import gimp
+            from pgimp.gimp.parameter import get_json, return_json
+            from pgimp.gimp.file import XcfFile
+            
+            files = get_json('__files__')
+            selections = {}
+            for file in files:
+                with XcfFile(file, save=True) as image:
+                    selections[file] = not gimp.pdb.gimp_selection_is_empty(image)
+            
+            return_json(selections)
+            """
+        ),
+        timeout_in_seconds=10
+    )
+    return result
