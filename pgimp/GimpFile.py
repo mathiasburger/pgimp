@@ -16,6 +16,7 @@ from pgimp.GimpException import GimpException
 from pgimp.GimpScriptRunner import GimpScriptRunner
 from pgimp.layers.Layer import Layer
 from pgimp.util import file
+from pgimp.util.TempFile import TempFile
 from pgimp.util.string import escape_single_quotes
 
 EXTENSION = '.xcf'
@@ -410,6 +411,7 @@ class GimpFile:
     def layers_to_numpy(
         self,
         layer_names: List[str],
+        use_temp_file=True,
         timeout: Optional[int] = None,
     ) -> np.ndarray:
         """
@@ -429,25 +431,34 @@ class GimpFile:
         (1, 2, 3)
 
         :param layer_names: Names of the layers to convert.
+        :param use_temp_file: Use a tempfile for data transmition instead of stdout. This is more robust in
+                              a multiprocessing setting.
         :param timeout: Execution timeout in seconds.
         :return: Numpy array of unsigned 8 bit integers.
         """
-        bytes = self._gsr.execute_binary(
-            textwrap.dedent(
-                """
-                import numpy as np
-                import sys
-                from pgimp.gimp.file import open_xcf
-                from pgimp.gimp.parameter import get_json
-                from pgimp.gimp.layer import convert_layers_to_numpy
-
-                np_buffer = convert_layers_to_numpy(open_xcf('{0:s}'), get_json('layer_names', '[]'))
-                np.save(sys.stdout, np_buffer)
-                """,
-            ).format(escape_single_quotes(self._file)),
-            parameters={'layer_names': layer_names},
-            timeout_in_seconds=self.long_running_timeout_in_seconds if timeout is None else timeout
-        )
+        with TempFile('.npy') as tmpfile:
+            bytes = self._gsr.execute_binary(
+                textwrap.dedent(
+                    """
+                    import numpy as np
+                    import sys
+                    from pgimp.gimp.file import open_xcf
+                    from pgimp.gimp.parameter import get_json, get_string
+                    from pgimp.gimp.layer import convert_layers_to_numpy
+    
+                    np_buffer = convert_layers_to_numpy(open_xcf('{0:s}'), get_json('layer_names', '[]'))
+                    temp_file = get_string('temp_file')
+                    if temp_file:
+                        np.save(temp_file, np_buffer)
+                    else:
+                        np.save(sys.stdout, np_buffer)
+                    """,
+                ).format(escape_single_quotes(self._file)),
+                parameters={'layer_names': layer_names, 'temp_file': tmpfile if use_temp_file else ''},
+                timeout_in_seconds=self.long_running_timeout_in_seconds if timeout is None else timeout
+            )
+            if use_temp_file:
+                return np.load(tmpfile)
 
         return np.load(io.BytesIO(bytes))
 

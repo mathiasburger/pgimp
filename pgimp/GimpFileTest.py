@@ -32,17 +32,19 @@ def test_layer_to_numpy():
 
 
 def test_layers_to_numpy():
-    with TempFile('.xcf') as f:
-        gimp_file = GimpFile(f) \
-            .create('Red', np.zeros(shape=(1, 2, 3), dtype=np.uint8)) \
-            .add_layer_from_numpy('Green', np.ones(shape=(1, 2, 3), dtype=np.uint8) * 127) \
-            .add_layer_from_numpy('Blue', np.ones(shape=(1, 2, 3), dtype=np.uint8) * 255)
-        np_array = gimp_file.layers_to_numpy(['Red', 'Green', 'Blue'])
+    use_temp_file_values = [True, False]
+    for use_temp_file in use_temp_file_values:
+        with TempFile('.xcf') as f:
+            gimp_file = GimpFile(f) \
+                .create('Red', np.zeros(shape=(1, 2, 3), dtype=np.uint8)) \
+                .add_layer_from_numpy('Green', np.ones(shape=(1, 2, 3), dtype=np.uint8) * 127) \
+                .add_layer_from_numpy('Blue', np.ones(shape=(1, 2, 3), dtype=np.uint8) * 255)
+            np_array = gimp_file.layers_to_numpy(['Red', 'Green', 'Blue'], use_temp_file=use_temp_file)
 
-    assert (1, 2, 9) == np_array.shape
-    assert np.all(np.array([
-        [[0, 0, 0, 127, 127, 127, 255, 255, 255], [0, 0, 0, 127, 127, 127, 255, 255, 255]],
-    ], dtype=np.uint8) == np_array)
+        assert (1, 2, 9) == np_array.shape
+        assert np.all(np.array([
+            [[0, 0, 0, 127, 127, 127, 255, 255, 255], [0, 0, 0, 127, 127, 127, 255, 255, 255]],
+        ], dtype=np.uint8) == np_array)
 
 
 def test_create():
