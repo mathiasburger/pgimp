@@ -1,6 +1,6 @@
 PROJECT = 'pgimp'
 AUTHOR = 'Mathias Burger'
-__version__ = '1.0.0-alpha-18'
+__version__ = '1.0.0-alpha-19'
 
 execute_scripts_with_process_check = True
 """ 
