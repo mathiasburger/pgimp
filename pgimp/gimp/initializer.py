@@ -18,3 +18,8 @@ sys.excepthook = __exception_hook
 if '__working_directory__' in os.environ:
     os.chdir(os.environ['__working_directory__'])
 sys.path.append(os.getcwd())
+
+if '__PYTHONPATH__' in os.environ:
+    pythonpath = os.environ['__PYTHONPATH__']
+    for path_component in [x.strip() for x in pythonpath.split(':')]:
+        sys.path.append(path_component)

@@ -376,9 +376,9 @@ class GimpScriptRunner:
         gimp_environment = {'__working_directory__': self._working_directory}
         gimp_environment.update(os.environ.copy())
         if 'PYTHONPATH' not in gimp_environment:
-            gimp_environment['PYTHONPATH'] = python2_pythonpath()
+            gimp_environment['__PYTHONPATH__'] = python2_pythonpath()
         else:
-            gimp_environment['PYTHONPATH'] = python2_pythonpath() + ':' + gimp_environment['PYTHONPATH']
+            gimp_environment['__PYTHONPATH__'] = python2_pythonpath() + ':' + gimp_environment['PYTHONPATH']
         gimp_environment.update({k: v for k, v in self._environment.items() if self._environment[k] is not None})
 
         parameters = parameters or {}
