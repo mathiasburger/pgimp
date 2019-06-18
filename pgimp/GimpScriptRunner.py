@@ -110,6 +110,7 @@ def is_xvfb_present():
 
 
 def strip_gimp_warnings(input):
+    input = "\n".join([line for line in input.split('\n') if not line.startswith('EEEEeEeek!')])
     if input.startswith('\n(gimp:'):
         to_find = '\n\n(gimp:'
         pos = 0
@@ -129,7 +130,7 @@ def strip_gimp_warnings(input):
 def strip_initialization_warnings(error_lines):
     strip_idx = 0
     for i in range(len(error_lines)-1, 0-1, -1):
-        if error_lines[i].startswith('*WARNING*'):
+        if error_lines[i].startswith('*WARNING*') or error_lines[i].startswith('./gimp-bin: GEGL-WARNING:'):
             strip_idx = i+1
             break
     error_lines = error_lines[strip_idx:]
