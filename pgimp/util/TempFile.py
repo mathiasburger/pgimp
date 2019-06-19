@@ -25,16 +25,18 @@ def shmem_dir():
 
 class TempFile:
     def __init__(self, suffix='', prefix=tempfile.template) -> None:
-        super().__init__()
-        self._file = None
         self._suffix = suffix
         self._prefix = prefix
+        self._file = None
+        self._file_handle = None
 
     def __enter__(self):
-        self._file = tempfile.mkstemp(suffix=self._suffix, prefix=self._prefix, dir=shmem_dir())[1]
+        file = tempfile.mkstemp(suffix=self._suffix, prefix=self._prefix, dir=shmem_dir())
+        self._file_handle, self._file = file
         return self._file
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        os.close(self._file_handle)
         if os.path.exists(self._file):
             os.remove(self._file)
         return False
