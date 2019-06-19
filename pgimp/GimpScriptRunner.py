@@ -9,13 +9,14 @@ import subprocess
 import sys
 import time
 from glob import glob
-from io import FileIO
 from json import JSONDecodeError
 from typing import Dict, Union
 
 import pgimp
 from pgimp.GimpException import GimpException
 from pgimp.util import file
+from pgimp.util.TempFile import TempFile
+from pgimp.util.file import read
 
 if pgimp.execute_scripts_with_process_check:
     import psutil
@@ -109,36 +110,6 @@ def is_xvfb_present():
     return path_to_xvfb_run() is not None
 
 
-def strip_gimp_warnings(input):
-    input = "\n".join([line for line in input.split('\n') if not line.startswith('EEEEeEeek!')])
-    if input.startswith('\n(gimp:'):
-        to_find = '\n\n(gimp:'
-        pos = 0
-        while True:
-            last_pos = pos
-            pos = input.find(to_find, pos + len(to_find))
-            if pos == -1:
-                output_start = input.find('\n', last_pos + len(to_find))
-                if output_start == -1:
-                    raise GimpException('Could not find start of output after gimp warnings.')
-                output_start += 1
-                break
-        input = input[output_start:]
-    return input
-
-
-def strip_initialization_warnings(error_lines):
-    strip_idx = 0
-    for i in range(len(error_lines)-1, 0-1, -1):
-        if error_lines[i].startswith('*WARNING*') or error_lines[i].startswith('./gimp-bin: GEGL-WARNING:'):
-            strip_idx = i+1
-            break
-    error_lines = error_lines[strip_idx:]
-    if error_lines == ['']:
-        return []
-    return error_lines
-
-
 def python2_pythonpath():
     global PYTHON2_PYTHONPATH
     if PYTHON2_PYTHONPATH is None:
@@ -189,8 +160,6 @@ class GimpScriptRunner:
             *,
             parameters: dict = None,
             timeout_in_seconds: float = None,
-            output_stream: FileIO = None,
-            error_stream: FileIO = None
     ) -> Union[str, None]:
         """
         Execute a script from a file within gimp's python interpreter.
@@ -212,8 +181,6 @@ class GimpScriptRunner:
                 'exec(open(get_parameter("__script_file__")).read(), globals())',
                 {**parameters, '__script_file__': file},
                 timeout_in_seconds,
-                output_stream=output_stream,
-                error_stream=error_stream
             )
             return result
         finally:
@@ -224,7 +191,6 @@ class GimpScriptRunner:
             string: str,
             parameters: dict = None,
             timeout_in_seconds: float = None,
-            error_stream: FileIO = None
     ) -> JsonType:
         """
         Execute a given piece of code within gimp's python interpreter and decode the result to json.
@@ -243,7 +209,6 @@ class GimpScriptRunner:
             string,
             parameters=parameters,
             timeout_in_seconds=timeout_in_seconds,
-            error_stream=error_stream
         )
         return self._parse(result)
 
@@ -252,7 +217,6 @@ class GimpScriptRunner:
             string: str,
             parameters: dict = None,
             timeout_in_seconds: float = None,
-            error_stream: FileIO = None
     ) -> bool:
         """
         Execute a given piece of code within gimp's python interpreter and decode the result to bool.
@@ -271,7 +235,6 @@ class GimpScriptRunner:
             string,
             parameters=parameters,
             timeout_in_seconds=timeout_in_seconds,
-            error_stream=error_stream
         )
         return self._parse(result)
 
@@ -280,7 +243,6 @@ class GimpScriptRunner:
             string: str,
             parameters: dict = None,
             timeout_in_seconds: float = None,
-            error_stream: FileIO = None
     ) -> bytes:
         """
         Execute a given piece of code within gimp's python interpreter and decode the result to bytes.
@@ -308,7 +270,6 @@ class GimpScriptRunner:
             timeout_in_seconds,
             binary=True,
             parameters=parameters,
-            error_stream=error_stream
         )
 
     def execute(
@@ -316,8 +277,6 @@ class GimpScriptRunner:
             string: str,
             parameters: Dict[str, Union[bool, int, float, str, bytes, list, tuple, dict]] = None,
             timeout_in_seconds: float = None,
-            output_stream: FileIO = None,
-            error_stream: FileIO = None
     ) -> Union[str, None]:
         """
         Execute a given piece of code within gimp's python interpreter.
@@ -333,18 +292,12 @@ class GimpScriptRunner:
                            be passed to the script and be decoded there.
         :param timeout_in_seconds: How long to wait for completion in seconds until a
                                    :py:class:`~pgimp.GimpScriptRunner.GimpScriptExecutionTimeoutException` is thrown.
-        :param output_stream: If absent, the method will return the output, otherwise it will be written
-                              diretcly to the stream.
-        :param error_stream: If absent, an exception will be thrown if errors occur. Otherwise errors will be written
-                             directly to the stream.
         :return: The output produced by the script if no output stream is defined.
         """
         return self._send_to_gimp(
             string,
             timeout_in_seconds,
             parameters=parameters,
-            output_stream=output_stream,
-            error_stream=error_stream
         )
 
     def _send_to_gimp(
@@ -353,8 +306,6 @@ class GimpScriptRunner:
             timeout_in_seconds: float = None,
             binary=False,
             parameters: dict = None,
-            output_stream: FileIO = None,
-            error_stream: FileIO = None
     ) -> Union[str, bytes, None]:
 
         if not is_gimp_present():
@@ -396,64 +347,47 @@ class GimpScriptRunner:
 
         gimp_environment.update({k: v for k, v in parameters_parsed.items() if parameters_parsed[k] is not None})
 
-        self._gimp_process = subprocess.Popen(
-            command,
-            stdin=subprocess.PIPE,
-            stdout=output_stream if output_stream else subprocess.PIPE,
-            stderr=error_stream if error_stream else subprocess.PIPE,
-            env=gimp_environment,
-        )
+        with TempFile('.stdout', 'pgimp') as stdout_file, TempFile('.stderr', 'pgimp') as stderr_file:
+            gimp_environment['__stdout__'] = stdout_file
+            gimp_environment['__stderr__'] = stderr_file
+            gimp_environment['__binary__'] = str(binary)
 
-        initializer = file.get_content(file.relative_to(__file__, 'gimp/initializer.py')) + '\n'
-        extend_path = "sys.path.append('{:s}')\n".format(os.path.dirname(os.path.dirname(__file__)))
-        quit_gimp = '\npdb.gimp_quit(0)'
+            self._gimp_process = subprocess.Popen(
+                command,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env=gimp_environment,
+            )
 
-        code = initializer + extend_path + code + quit_gimp
+            initializer = file.get_content(file.relative_to(__file__, 'gimp/initializer.py')) + '\n'
+            extend_path = "sys.path.append('{:s}')\n".format(os.path.dirname(os.path.dirname(__file__)))
+            quit_gimp = '\npdb.gimp_quit(0)'
 
-        if pgimp.execute_scripts_with_process_check:
-            import psutil
+            code = initializer + extend_path + code + quit_gimp
 
-            if is_xvfb_present():
-                expected_processes = {'xvfb', 'gimp', 'script-fu', 'python'}
-            else:
-                expected_processes = {'script-fu', 'python'}
-
-            process = psutil.Process(self._gimp_process.pid)
-            process_children = self._wait_for_child_processes_to_start(process, expected_processes)
-
-        try:
-            stdout, stderr = self._gimp_process.communicate(code.encode(), timeout=timeout_in_seconds)
-        except subprocess.TimeoutExpired as exception:
-            self._gimp_process.kill()
-            raise GimpScriptExecutionTimeoutException(str(exception) + '\nCode that was executed:\n' + code)
-        finally:
             if pgimp.execute_scripts_with_process_check:
-                self._kill_non_terminated_processes(process_children)
+                import psutil
 
-        if binary:
-            stdout_content = stdout
-        elif output_stream:
-            stdout_content = None
-            output_stream.close()
-        else:
-            stdout_content = stdout.decode()
+                if is_xvfb_present():
+                    expected_processes = {'xvfb', 'gimp', 'script-fu', 'python'}
+                else:
+                    expected_processes = {'script-fu', 'python'}
 
-        if error_stream:
-            stderr_content = None
-            error_stream.close()
-        else:
-            stderr_content = strip_gimp_warnings(stderr.decode())
+                process = psutil.Process(self._gimp_process.pid)
+                process_children = self._wait_for_child_processes_to_start(process, expected_processes)
 
-        # gimp prior to 2.8.22 writes plugin's stderr to stdout
-        if binary:
-            stdout_with_possible_errors = strip_gimp_warnings(stdout.decode('latin1'))
-        if not output_stream:
-            if not binary:
-                stdout_with_possible_errors = stdout_content
-            if stdout_with_possible_errors.strip().split('\n')[-1].startswith('__GIMP_SCRIPT_ERROR__'):
-                if binary:  # convert to utf8 because output is error and should not be binary
-                    stdout_with_possible_errors = stdout_with_possible_errors.encode('latin1').decode()
-                stderr_content = stdout_with_possible_errors
+            try:
+                self._gimp_process.communicate(code.encode(), timeout=timeout_in_seconds)
+            except subprocess.TimeoutExpired as exception:
+                self._gimp_process.kill()
+                raise GimpScriptExecutionTimeoutException(str(exception) + '\nCode that was executed:\n' + code)
+            finally:
+                if pgimp.execute_scripts_with_process_check:
+                    self._kill_non_terminated_processes(process_children)
+
+            stdout_content = read(stdout_file, 'r' if not binary else 'rb')
+            stderr_content = read(stderr_file, 'r')
 
         if stderr_content:
             error_lines = stderr_content.strip().split('\n')
@@ -462,17 +396,9 @@ class GimpScriptRunner:
                 if self._file_to_execute:
                     error_string = error_string.replace('File "<string>"', 'File "{:s}"'.format(self._file_to_execute), 1)
                 raise GimpScriptException(error_string)
-            error_lines = strip_initialization_warnings(error_lines)
-            if error_lines:
-                raise GimpScriptException('\n'.join(error_lines))
+            raise GimpScriptException('\n'.join(error_lines))
 
-        if binary:
-            # gimp warnings can be mixed with byte content, use latin1 because it is a bytewise encoding
-            # that extends ascii (ascii is only 0 to 127); gimp warnings should only contain ascii characters
-            return strip_gimp_warnings(stdout.decode('latin1')).encode('latin1')
-        if output_stream:
-            return None
-        return strip_gimp_warnings(stdout_content)
+        return stdout_content
 
     def _wait_for_child_processes_to_start(self, process, expected_processes):
         current_time = time.time()

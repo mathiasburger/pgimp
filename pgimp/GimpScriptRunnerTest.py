@@ -3,17 +3,14 @@
 # SPDX-License-Identifier: MIT
 
 import os
-import tempfile
-from io import FileIO
 from tempfile import mktemp
 
 import numpy as np
 import pytest
 
 from pgimp.GimpScriptRunner import GimpScriptRunner, GimpScriptException, GimpScriptExecutionTimeoutException, \
-    strip_gimp_warnings, strip_initialization_warnings, python2_pythonpath
+    python2_pythonpath
 from pgimp.util import file
-from pgimp.util.TempFile import TempFile
 
 gsr = GimpScriptRunner()
 
@@ -102,50 +99,6 @@ def test_import_from_pgimp_library():
     assert 'Blue\n' == out
 
 
-def test_execute_with_output_stream():
-    tmpfile = tempfile.mktemp()
-
-    stream = FileIO(tmpfile, 'w')
-    out = gsr.execute(
-        "import time; time.sleep(1); print('1'); time.sleep(1); print('2'); time.sleep(1); print('3')",
-        output_stream=stream
-    )
-
-    assert out is None
-    assert stream.closed
-    with open(tmpfile, 'r') as fh:
-        assert '1\n2\n3\n' == strip_gimp_warnings(fh.read())
-
-    os.remove(tmpfile)
-
-
-def test_execute_with_error_stream():
-    with TempFile() as tmpfile:
-        stream = FileIO(tmpfile, 'w')
-
-        try:
-            out = gsr.execute(
-                "print('1'); print('2'); print('3'); 1/0",
-                error_stream=stream
-            )
-
-            assert '1\n2\n3\n' == out
-            assert stream.closed
-
-            with open(tmpfile, 'r') as fh:
-                assert fh.read().endswith('__GIMP_SCRIPT_ERROR__ 1')
-        except GimpScriptException as e:
-            # gimp prior to 2.8.22 writes stderr to stdout and an error in stdout will cause an exception
-            # and stderr will be empty
-
-            exception_message = strip_gimp_warnings(str(e))
-            assert exception_message.startswith('1\n2\n3\nTraceback')
-            assert exception_message.endswith('ZeroDivisionError: integer division or modulo by zero\n')
-
-            with open(tmpfile, 'r') as fh:
-                assert fh.read().endswith('')
-
-
 def test_execute_binary():
     arr = np.frombuffer(GimpScriptRunner().execute_binary(
         "from pgimp.gimp.parameter import *; import sys; sys.stdout.write(get_bytes('arr'))",
@@ -153,35 +106,6 @@ def test_execute_binary():
         dtype=np.uint8
     )
     assert np.all([0, 1, 2] == arr)
-
-
-def test_strip_gimp_warnings():
-    warnings = '\n(gimp:5857): GLib-GObject-WARNING **: g_object_set_valist: object class \'GeglConfig\' has no ' \
-               'property named \'cache-size\'\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name ' \
-               'of operation class 0x28E1A00 from "gimp:point-layer-mode" to "gimp:dissolve-mode"\n\n(gimp:5857): ' \
-               'GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E1E10 from ' \
-               '"gimp:point-layer-mode" to "gimp:behind-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: ' \
-               'Cannot change name of operation class 0x28E2200 from "gimp:point-layer-mode" to "gimp:multiply-mode"' \
-               '\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3250 ' \
-               'from "gimp:point-layer-mode" to "gimp:screen-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **:' \
-               ' Cannot change name of operation class 0x28E3620 from "gimp:point-layer-mode" to "gimp:overlay-mode"' \
-               '\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E3A50 ' \
-               'from "gimp:point-layer-mode" to "gimp:difference-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING' \
-               ' **: Cannot change name of operation class 0x28E3E10 from "gimp:point-layer-mode" to '\
-               '"gimp:addition-mode"\n\n(gimp:5857): GEGL-gegl-operation.c-WARNING **: Cannot change name of ' \
-               'operation class 0x28E4250 from "gimp:point-layer-mode" to "gimp:subtract-mode"\n\n(gimp:5857): ' \
-               'GEGL-gegl-operation.c-WARNING **: Cannot change name of operation class 0x28E4640 from ' \
-               '"gimp:point-layer-mode" to "gimp:darken-only-mode"\n'
-
-    desired_output = ' my result\n\nblah'
-
-    input = warnings + desired_output
-    assert desired_output == strip_gimp_warnings(input)
-
-    desired_output = '(gimp:THIS SHOULD NOT BE EXCLUDED BECAUSE OF ONLY ONE NEWLINE INSTEAD OF TWO\n\nblah'
-
-    input = warnings + desired_output
-    assert desired_output == strip_gimp_warnings(input)
 
 
 def test_no_dangling_processes():
@@ -198,25 +122,6 @@ def test_no_dangling_processes():
 
     print('\n'.join(hanging_processes))
     assert len(hanging_processes) == 0
-
-
-def test_strip_initialization_warnings():
-    error = ('Missing fast-path babl conversion detected, Implementing missing babl fast paths\n'
-             'accelerates GEGL, GIMP and other software using babl, warnings are printed on\n'
-             'first occurance of formats used where a conversion has to be synthesized\n'
-             'programmatically by babl based on format description\n'
-             '\n'
-             '*WARNING* missing babl fast path(s): "R\'G\'B\' double" to "CIE Lab double"\n')
-    error_lines = error.split('\n')
-    error_lines = strip_initialization_warnings(error_lines)
-
-    assert not error_lines
-
-    error += 'abc'
-    error_lines = error.split('\n')
-    error_lines = strip_initialization_warnings(error_lines)
-
-    assert ['abc'] == error_lines
 
 
 def test_python2_pythonpath():

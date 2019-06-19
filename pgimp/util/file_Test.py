@@ -5,7 +5,8 @@
 import os
 import tempfile
 
-from pgimp.util.file import copy_relative, relative_to
+from pgimp.util.TempFile import TempFile
+from pgimp.util.file import copy_relative, relative_to, read
 
 
 def test_copy_with_filename_only():
@@ -40,3 +41,12 @@ def test_copy_with_absolute_path():
     assert os.path.exists(expected)
 
     os.remove(expected)
+
+
+def test_read():
+    content = 'abc' * 1000000
+    with TempFile() as tmp:
+        fh = open(tmp, 'w')
+        fh.write(content)
+        assert read(tmp) == content
+
