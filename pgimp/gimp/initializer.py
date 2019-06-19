@@ -7,6 +7,12 @@ import sys
 
 import gimp
 
+binary = bool(os.environ['__binary__'])
+stdout_file = os.environ['__stdout__']
+sys.stdout = open(stdout_file, 'w' if not binary else 'wb')
+stderr_file = os.environ['__stderr__']
+sys.stderr = open(stderr_file, 'w')
+
 
 def __exception_hook(exctype, value, traceback):
     sys.__excepthook__(exctype, value, traceback)

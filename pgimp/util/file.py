@@ -42,3 +42,10 @@ def copy_relative(src: str, dst: str):
         dst = os.path.join(os.path.dirname(src), dst)
         shutil.copyfile(src, dst)
     return dst
+
+
+def read(file, mode='r'):
+    fh = open(file, mode)
+    content = fh.read()
+    fh.close()
+    return content
