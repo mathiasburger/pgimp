@@ -389,16 +389,16 @@ class GimpScriptRunner:
             stdout_content = read(stdout_file, 'r' if not binary else 'rb')
             stderr_content = read(stderr_file, 'r')
 
-            if stderr_content:
-                error_lines = stderr_content.strip().split('\n')
-                if error_lines[-1].startswith('__GIMP_SCRIPT_ERROR__'):
-                    error_string = stderr_content.rsplit('\n', 1)[0] + '\n'
-                    if self._file_to_execute:
-                        error_string = error_string.replace('File "<string>"', 'File "{:s}"'.format(self._file_to_execute), 1)
-                    raise GimpScriptException(error_string)
-                raise GimpScriptException('\n'.join(error_lines))
+        if stderr_content:
+            error_lines = stderr_content.strip().split('\n')
+            if error_lines[-1].startswith('__GIMP_SCRIPT_ERROR__'):
+                error_string = stderr_content.rsplit('\n', 1)[0] + '\n'
+                if self._file_to_execute:
+                    error_string = error_string.replace('File "<string>"', 'File "{:s}"'.format(self._file_to_execute), 1)
+                raise GimpScriptException(error_string)
+            raise GimpScriptException('\n'.join(error_lines))
 
-            return stdout_content
+        return stdout_content
 
     def _wait_for_child_processes_to_start(self, process, expected_processes):
         current_time = time.time()
