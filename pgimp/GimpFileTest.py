@@ -15,7 +15,7 @@ from pgimp.util.TempFile import TempFile
 
 rgb_file = GimpFile(file.relative_to(__file__, 'test-resources/rgb.xcf'))
 """
-The file rgb.xcf contains a 3x2 image with white 'Background' layer and 'Red', 'Green', 'Blue' layers with differing 
+The file rgb.xcf contains a 3x2 image with white 'Background' layer and 'Red', 'Green', 'Blue' layers with differing
 opacity. The layer 'Background' contains a black pixel at y=0, x=1, the others pixels are white.
 """
 
@@ -330,9 +330,14 @@ def test_export():
         gimp_file = GimpFile(xcf) \
             .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8)) \
             .add_layer_from_numpy('Foreground', np.ones(shape=(1, 1), dtype=np.uint8) * 255, opacity=50.) \
+            # 50% opacity results in uint8 of 127 or 128 depending on the implementation -> needs test tolerance
 
         gimp_file.export(png)  # saved as grayscale with alpha (identify -format '%[channels]' FILE)
         gimp_file.export(jpg)
 
-        assert np.all([127, 255] == GimpFile(from_png).create_from_file(png, layer_name='Image').layer_to_numpy('Image'))
-        assert np.all([127] == GimpFile(from_png).create_from_file(jpg, layer_name='Image').layer_to_numpy('Image'))
+        reimported_np_from_png = GimpFile(from_png).create_from_file(png, layer_name='Image').layer_to_numpy('Image')
+        assert np.isclose(reimported_np_from_png[0, 0, 0], 127.5, atol=0.5)
+        assert reimported_np_from_png[0, 0, 1] == 255
+
+        reimported_np_from_jpg = GimpFile(from_png).create_from_file(jpg, layer_name='Image').layer_to_numpy('Image')
+        assert np.isclose([127.5], reimported_np_from_jpg, atol=0.5)

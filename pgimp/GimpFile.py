@@ -328,10 +328,10 @@ class GimpFile:
         >>> with TempFile('.xcf') as xcf, TempFile('.png') as png, TempFile('.xcf') as from_png:
         ...     gimp_file = GimpFile(xcf) \\
         ...         .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8)) \\
-        ...         .add_layer_from_numpy('Foreground', np.ones(shape=(1, 1), dtype=np.uint8)*255, opacity=50.) \\
+        ...         .add_layer_from_numpy('Foreground', np.ones(shape=(1, 1), dtype=np.uint8)*255, opacity=100.) \\
         ...         .export(png)  # saved as grayscale with alpha (identify -format '%[channels]' FILE)
         ...     GimpFile(from_png).create_from_file(png, layer_name='Image').layer_to_numpy('Image')
-        array([[[127, 255]]], dtype=uint8)
+        array([[[255, 255]]], dtype=uint8)
 
         :param file: File to import into gimp.
         :param layer_name: The layer name for the data to be imported.
@@ -445,7 +445,7 @@ class GimpFile:
                     from pgimp.gimp.file import open_xcf
                     from pgimp.gimp.parameter import get_json, get_string
                     from pgimp.gimp.layer import convert_layers_to_numpy
-    
+
                     np_buffer = convert_layers_to_numpy(open_xcf('{0:s}'), get_json('layer_names', '[]'))
                     temp_file = get_string('temp_file')
                     if temp_file:
@@ -564,18 +564,18 @@ class GimpFile:
             from pgimp.gimp.file import XcfFile
             from pgimp.gimp.layer import add_layers_from_numpy
             from pgimp.gimp.parameter import get_json, get_int, get_string
-            
+
             with XcfFile(get_string('file'), save=True) as image:
                 position = get_json('position')[0]
                 add_layers_from_numpy(
-                    image, get_string('tmpfile'), 
-                    get_json('layer_names'), 
-                    get_int('width'), 
-                    get_int('height'), 
-                    get_int('layer_type'), 
-                    position, 
+                    image, get_string('tmpfile'),
+                    get_json('layer_names'),
+                    get_int('width'),
+                    get_int('height'),
+                    get_int('layer_type'),
+                    position,
                     get_json('opacity')[0],
-                    get_json('blend_mode')[0], 
+                    get_json('blend_mode')[0],
                     get_json('visible')[0]
                 )
             """
@@ -676,7 +676,7 @@ class GimpFile:
             from pgimp.gimp.parameter import get_json
             from pgimp.gimp.file import XcfFile
             from pgimp.gimp.layer import copy_layer
-            
+
             params = get_json('params')
             new_position = params['new_position']
             new_visibility = params['new_visibility']
@@ -698,7 +698,7 @@ class GimpFile:
         )
 
         self._gsr.execute(
-            code, 
+            code,
             timeout_in_seconds=self.long_running_timeout_in_seconds if timeout is None else timeout,
             parameters={
                 'params': {
@@ -759,7 +759,7 @@ class GimpFile:
         )
 
         self._gsr.execute(
-            code, 
+            code,
             timeout_in_seconds=self.long_running_timeout_in_seconds if timeout is None else timeout
         )
         return self
@@ -770,7 +770,7 @@ class GimpFile:
     ) -> List[Layer]:
         """
         Returns the image layers. The topmost layer is the first element, the bottommost the last element.
-        
+
         :param timeout: Execution timeout in seconds.
         :return: List of :py:class:`~pgimp.layers.Layer`.
         """
@@ -794,7 +794,7 @@ class GimpFile:
         )
 
         result = self._gsr.execute_and_parse_json(
-            code, 
+            code,
             timeout_in_seconds=self.short_running_timeout_in_seconds if timeout is None else timeout
         )
         layers = []
@@ -823,7 +823,7 @@ class GimpFile:
         ...         .add_layer_from_numpy('Black', np.zeros(shape=(2, 2), dtype=np.uint8))
         ...     gimp_file.layer_names()
         ['Black', 'Background']
-        
+
         :param timeout: Execution timeout in seconds.
         :return: List of layer names.
         """
@@ -866,7 +866,7 @@ class GimpFile:
         ).format(escape_single_quotes(self._file), escape_single_quotes(layer_name))
 
         self._gsr.execute(
-            code, 
+            code,
             timeout_in_seconds=self.short_running_timeout_in_seconds if timeout is None else timeout
         )
         return self
@@ -901,7 +901,7 @@ class GimpFile:
         ).format(escape_single_quotes(self._file))
 
         dimensions = self._gsr.execute_and_parse_json(
-            code, 
+            code,
             timeout_in_seconds=self.short_running_timeout_in_seconds if timeout is None else timeout
         )
         return tuple(dimensions)
@@ -925,10 +925,10 @@ class GimpFile:
         >>> with TempFile('.xcf') as xcf, TempFile('.png') as png, TempFile('.xcf') as from_png:
         ...     gimp_file = GimpFile(xcf) \\
         ...         .create('Background', np.zeros(shape=(1, 1), dtype=np.uint8)) \\
-        ...         .add_layer_from_numpy('Foreground', np.ones(shape=(1, 1), dtype=np.uint8)*255, opacity=50.) \\
+        ...         .add_layer_from_numpy('Foreground', np.ones(shape=(1, 1), dtype=np.uint8)*255, opacity=100.) \\
         ...         .export(png)  # saved as grayscale with alpha (identify -format '%[channels]' FILE)
         ...     GimpFile(from_png).create_from_file(png, layer_name='Image').layer_to_numpy('Image')
-        array([[[127, 255]]], dtype=uint8)
+        array([[[255, 255]]], dtype=uint8)
 
         :param file: Filename including the desired extension to export to.
         :param timeout: Execution timeout in seconds.
@@ -947,7 +947,7 @@ class GimpFile:
         ).format(escape_single_quotes(self._file), escape_single_quotes(file))
 
         self._gsr.execute(
-            code, 
+            code,
             timeout_in_seconds=self.short_running_timeout_in_seconds if timeout is None else timeout
         )
         return self

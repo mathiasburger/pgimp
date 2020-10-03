@@ -1,4 +1,4 @@
-version: '2'
+version: '2.1'
 
 services:
   pgimp-ubuntu-16.04:
@@ -8,6 +8,7 @@ services:
     image: mabu/pgimp-ubuntu-16.04:latest
     volumes:
       - ./:/src
+    shm_size: '256m'
   pgimp-ubuntu-18.04:
     build:
       context: .
@@ -15,6 +16,15 @@ services:
     image: mabu/pgimp-ubuntu-18.04:latest
     volumes:
       - ./:/src
+    shm_size: '256m'
+  pgimp-ubuntu-20.04:
+    build:
+      context: .
+      dockerfile: test/envs/linux/ubuntu/20.04/Dockerfile
+    image: mabu/pgimp-ubuntu-20.04:latest
+    volumes:
+      - ./:/src
+    shm_size: '256m'
   pgimp-centos-7.4:
     build:
       context: .
@@ -22,6 +32,7 @@ services:
     image: mabu/pgimp-centos-7.4:latest
     volumes:
       - ./:/src
+    shm_size: '256m'
   pgimp-centos-7.6:
     build:
       context: .
@@ -29,3 +40,4 @@ services:
     image: mabu/pgimp-centos-7.6:latest
     volumes:
       - ./:/src
+    shm_size: '256m'
