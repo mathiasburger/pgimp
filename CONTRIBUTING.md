@@ -103,3 +103,11 @@ Package and upload:
 ./packaging.sh
 ./packaging-upload.sh
 ```
+
+## Verify that the package can be installed from pypi
+
+Ubuntu
+```
+docker-compose build pgimp-ubuntu-20.04
+docker-compose build pgimp-ubuntu-20.04-installation
+```

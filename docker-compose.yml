@@ -25,6 +25,13 @@ services:
     volumes:
       - ./:/src
     shm_size: '256m'
+  pgimp-ubuntu-20.04-installation:
+    build:
+      context: .
+      dockerfile: test/installation/linux/ubuntu/20.04/Dockerfile
+    image: mabu/pgimp-ubuntu-20.04:latest
+    volumes:
+      - ./:/src
   pgimp-centos-7.4:
     build:
       context: .
